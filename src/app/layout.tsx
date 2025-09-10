@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Ubuntu, Ubuntu_Mono } from "next/font/google";
 import "./globals.css";
-import Sidebar from "@/components/common/sidebar";
+import Sidebar from "@/components/common/sidebar/sidebar";
 
 const ubuntuSans = Ubuntu({
   variable: "--font-ubuntu-sans",
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   title: "Civix | Agente de Trámites del Gobierno de San Juan",
   description: "Poc de integración de N8N con Next.js",
   icons: {
-    icon: "/favicon.svg",
+    icon: "/logos/isotipo.svg",
   },
 };
 
