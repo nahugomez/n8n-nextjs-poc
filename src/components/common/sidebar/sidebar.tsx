@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Image from 'next/image';
 import { 
   Plus, 
   ChevronLeft, 
@@ -73,11 +74,26 @@ const ChatSidebar = () => {
                 onClick={toggleSidebar}
                 className="w-8 h-8 bg-sidebar-accent hover:bg-sidebar-accent/80 rounded-lg flex items-center justify-center transition-colors"
               >
-                <Menu className="w-5 h-5 text-sidebar-foreground" />
+                <Image
+                  src="/logos/isotipo.svg"
+                  alt="App Logo"
+                  width={20}
+                  height={20}
+                  className="text-sidebar-foreground"
+                />
               </button>
             ) : (
-              <div className="w-8 h-8 bg-sidebar-accent rounded-lg flex items-center justify-center">
-                <div className="w-4 h-4 bg-sidebar-foreground/60 rounded-sm" />
+              <div className="flex items-center gap-2">
+                <Image
+                  src="/logos/isotipo.svg"
+                  alt="App Logo"
+                  width={24}
+                  height={24}
+                  className="text-sidebar-foreground"
+                />
+                <span className="text-sidebar-foreground font-semibold text-sm">
+                  Civix
+                </span>
               </div>
             )}
           </div>
