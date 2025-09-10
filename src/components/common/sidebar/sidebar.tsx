@@ -10,6 +10,7 @@ import {
   Menu
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 
 const ChatSidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -70,9 +71,11 @@ const ChatSidebar = () => {
           {/* Logo/Icon */}
           <div className="flex items-center">
             {isCollapsed ? (
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={toggleSidebar}
-                className="w-8 h-8 bg-sidebar-accent hover:bg-sidebar-accent/80 rounded-lg flex items-center justify-center transition-colors"
+                className="w-8 h-8 bg-sidebar-accent hover:bg-sidebar-accent/80"
               >
                 <Image
                   src="/logos/isotipo.svg"
@@ -81,7 +84,7 @@ const ChatSidebar = () => {
                   height={20}
                   className="text-sidebar-foreground"
                 />
-              </button>
+              </Button>
             ) : (
               <div className="flex items-center gap-2">
                 <Image
@@ -101,15 +104,20 @@ const ChatSidebar = () => {
           {/* Collapse button - only show when expanded */}
           <AnimatePresence>
             {!isCollapsed && (
-              <motion.button
+              <motion.div
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
-                onClick={toggleSidebar}
-                className="p-2 hover:bg-sidebar-accent rounded-lg transition-colors"
               >
-                <ChevronLeft className="w-4 h-4 text-sidebar-foreground/70" />
-              </motion.button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleSidebar}
+                  className="p-2 hover:bg-sidebar-accent"
+                >
+                  <ChevronLeft className="w-4 h-4 text-sidebar-foreground/70" />
+                </Button>
+              </motion.div>
             )}
           </AnimatePresence>
         </div>
@@ -128,24 +136,28 @@ const ChatSidebar = () => {
               className="p-4 space-y-4"
             >
               {/* New Chat Button */}
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={createNewChat}
-                className="w-full p-3 bg-sidebar-accent hover:bg-sidebar-accent/80 rounded-lg transition-colors flex items-center justify-center"
+                className="w-full p-3 bg-sidebar-accent hover:bg-sidebar-accent/80"
                 title="New Chat"
               >
                 <Plus className="w-5 h-5 text-sidebar-foreground" />
-              </button>
+              </Button>
               
               {/* Chat List */}
               <div className="space-y-2">
                 {chats.map((chat) => (
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     key={chat.id}
-                    className="w-full p-3 hover:bg-sidebar-accent rounded-lg transition-colors flex items-center justify-center"
+                    className="w-full p-3 hover:bg-sidebar-accent"
                     title={chat.title}
                   >
                     <MessageSquare className="w-5 h-5 text-sidebar-foreground/70" />
-                  </button>
+                  </Button>
                 ))}
               </div>
             </motion.div>
@@ -160,34 +172,36 @@ const ChatSidebar = () => {
               className="p-4 space-y-4"
             >
               {/* New Chat Button */}
-              <button
+              <Button
+                variant="ghost"
                 onClick={createNewChat}
-                className="w-full p-3 bg-sidebar-accent hover:bg-sidebar-accent/80 rounded-lg transition-colors flex items-center gap-3"
+                className="w-full p-3 bg-sidebar-accent hover:bg-sidebar-accent/80 justify-start"
               >
                 <Plus className="w-5 h-5 text-sidebar-foreground" />
                 <span className="text-sidebar-foreground font-medium">New Chat</span>
-              </button>
+              </Button>
 
               {/* Chat List */}
               <div className="space-y-2">
                 <h3 className="text-sidebar-foreground/70 text-sm font-medium px-2 mb-2">Recent Chats</h3>
                 {chats.map((chat) => (
-                  <button
+                  <Button
+                    variant="ghost"
                     key={chat.id}
-                    className="w-full p-3 hover:bg-slate-700 rounded-lg transition-colors text-left group"
+                    className="w-full p-3 hover:bg-sidebar-accent justify-start h-auto"
                   >
                     <div className="flex items-start gap-3">
-                      <MessageSquare className="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-slate-300 text-sm font-medium truncate">
+                      <MessageSquare className="w-4 h-4 text-sidebar-foreground/70 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1 min-w-0 text-left">
+                        <p className="text-sidebar-foreground text-sm font-medium truncate">
                           {chat.title}
                         </p>
-                        <p className="text-slate-500 text-xs mt-1">
+                        <p className="text-sidebar-foreground/50 text-xs mt-1">
                           {chat.timestamp}
                         </p>
                       </div>
                     </div>
-                  </button>
+                  </Button>
                 ))}
               </div>
             </motion.div>
