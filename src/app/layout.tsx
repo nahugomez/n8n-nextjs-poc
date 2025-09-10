@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Ubuntu, Ubuntu_Mono } from "next/font/google";
 import "./globals.css";
+import Sidebar from "@/components/common/sidebar";
 
 const ubuntuSans = Ubuntu({
   variable: "--font-ubuntu-sans",
@@ -15,7 +16,7 @@ const ubuntuMono = Ubuntu_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Agente Virtual | n8n + Next.js",
+  title: "Civix | Agente de Trámites del Gobierno de San Juan",
   description: "Poc de integración de N8N con Next.js",
   icons: {
     icon: "/favicon.svg",
@@ -29,11 +30,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body
-        className={`${ubuntuSans.variable} ${ubuntuMono.variable} antialiased`}
-      >
-        {children}
-      </body>
-    </html>
+    <body className="bg-zinc-950 text-zinc-100">
+      <div className="flex min-h-screen">
+        <Sidebar />
+        <main className="flex-1">{children}</main>
+      </div>
+    </body>
+  </html>
   );
 }
