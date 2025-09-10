@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Ubuntu, Ubuntu_Mono } from "next/font/google";
 import "./globals.css";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/common";
 
 const ubuntuSans = Ubuntu({
   variable: "--font-ubuntu-sans",
@@ -34,15 +32,7 @@ export default function RootLayout({
       <body
         className={`${ubuntuSans.variable} ${ubuntuMono.variable} antialiased`}
       >
-        <SidebarProvider>
-          <div className="flex min-h-screen">
-            <AppSidebar />
-            <main className="flex-1">
-              <SidebarTrigger />
-              {children}
-            </main>
-          </div>
-        </SidebarProvider>
+        {children}
       </body>
     </html>
   );
