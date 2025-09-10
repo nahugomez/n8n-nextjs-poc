@@ -10,13 +10,13 @@ import {
 } from 'lucide-react';
 
 // Avatar component (simplified version of shadcn/ui avatar)
-const Avatar = ({ children, className = "" }) => (
+const Avatar = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
   <div className={`relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full ${className}`}>
     {children}
   </div>
 );
 
-const AvatarFallback = ({ children, className = "" }) => (
+const AvatarFallback = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
   <div className={`flex h-full w-full items-center justify-center rounded-full bg-slate-100 text-slate-900 ${className}`}>
     {children}
   </div>
@@ -45,18 +45,10 @@ const ChatSidebar = () => {
 
   const sidebarVariants = {
     expanded: {
-      width: 280,
-      transition: {
-        duration: 0.3,
-        ease: "easeInOut"
-      }
+      width: 280
     },
     collapsed: {
-      width: 64,
-      transition: {
-        duration: 0.3,
-        ease: "easeInOut"
-      }
+      width: 64
     }
   };
 
@@ -81,6 +73,7 @@ const ChatSidebar = () => {
       className="h-screen bg-slate-900 border-r border-slate-700 flex flex-col relative"
       variants={sidebarVariants}
       animate={isCollapsed ? "collapsed" : "expanded"}
+      transition={{ duration: 0.3, ease: "easeInOut" }}
     >
       {/* Header */}
       <div className="p-4 border-b border-slate-700">
