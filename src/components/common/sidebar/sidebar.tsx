@@ -1,16 +1,10 @@
 "use client";
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import Image from 'next/image';
-import { 
-  Plus, 
-  ChevronLeft, 
-  MessageSquare,
-  Menu
-} from 'lucide-react';
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { motion } from 'framer-motion';
+import { SidebarHeader } from './sidebar-header';
+import { SidebarContent } from './sidebar-content';
+import { SidebarFooter } from './sidebar-footer';
 
 const ChatSidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -65,193 +59,18 @@ const ChatSidebar = () => {
       animate={isCollapsed ? "collapsed" : "expanded"}
       transition={{ duration: 0.3, ease: "easeInOut" }}
     >
-      {/* Header */}
-      <div className="p-4 border-b border-sidebar-border">
-        <div className="flex items-center justify-between">
-          {/* Logo/Icon */}
-          <div className="flex items-center">
-            {isCollapsed ? (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleSidebar}
-                className="w-8 h-8 bg-sidebar-accent hover:bg-sidebar-accent/80"
-              >
-                <Image
-                  src="/logos/isotipo.svg"
-                  alt="App Logo"
-                  width={20}
-                  height={20}
-                  className="text-sidebar-foreground"
-                />
-              </Button>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Image
-                  src="/logos/isotipo.svg"
-                  alt="App Logo"
-                  width={24}
-                  height={24}
-                  className="text-sidebar-foreground"
-                />
-                <span className="text-sidebar-foreground font-semibold text-sm">
-                  Civix
-                </span>
-              </div>
-            )}
-          </div>
-          
-          {/* Collapse button - only show when expanded */}
-          <AnimatePresence>
-            {!isCollapsed && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.8 }}
-              >
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleSidebar}
-                  className="p-2 hover:bg-sidebar-accent"
-                >
-                  <ChevronLeft className="w-4 h-4 text-sidebar-foreground/70" />
-                </Button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </div>
-
-      {/* Content - Scrollable middle section */}
-      <div className="flex-1 overflow-y-auto">
-        <AnimatePresence mode="wait">
-          {isCollapsed ? (
-            // Collapsed content
-            <motion.div
-              key="collapsed"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="p-4 space-y-4"
-            >
-              {/* New Chat Button */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={createNewChat}
-                className="w-full p-3 bg-sidebar-accent hover:bg-sidebar-accent/80"
-                title="New Chat"
-              >
-                <Plus className="w-5 h-5 text-sidebar-foreground" />
-              </Button>
-              
-              {/* Chat List */}
-              <div className="space-y-2">
-                {chats.map((chat) => (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    key={chat.id}
-                    className="w-full p-3 hover:bg-sidebar-accent"
-                    title={chat.title}
-                  >
-                    <MessageSquare className="w-5 h-5 text-sidebar-foreground/70" />
-                  </Button>
-                ))}
-              </div>
-            </motion.div>
-          ) : (
-            // Expanded content
-            <motion.div
-              key="expanded"
-              variants={contentVariants}
-              initial="collapsed"
-              animate="expanded"
-              exit="collapsed"
-              className="p-4 space-y-4"
-            >
-              {/* New Chat Button */}
-              <Button
-                variant="ghost"
-                onClick={createNewChat}
-                className="w-full p-3 bg-sidebar-accent hover:bg-sidebar-accent/80 justify-start"
-              >
-                <Plus className="w-5 h-5 text-sidebar-foreground" />
-                <span className="text-sidebar-foreground font-medium">New Chat</span>
-              </Button>
-
-              {/* Chat List */}
-              <div className="space-y-2">
-                <h3 className="text-sidebar-foreground/70 text-sm font-medium px-2 mb-2">Recent Chats</h3>
-                {chats.map((chat) => (
-                  <Button
-                    variant="ghost"
-                    key={chat.id}
-                    className="w-full p-3 hover:bg-sidebar-accent justify-start h-auto"
-                  >
-                    <div className="flex items-start gap-3">
-                      <MessageSquare className="w-4 h-4 text-sidebar-foreground/70 mt-0.5 flex-shrink-0" />
-                      <div className="flex-1 min-w-0 text-left">
-                        <p className="text-sidebar-foreground text-sm font-medium truncate">
-                          {chat.title}
-                        </p>
-                        <p className="text-sidebar-foreground/50 text-xs mt-1">
-                          {chat.timestamp}
-                        </p>
-                      </div>
-                    </div>
-                  </Button>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Footer */}
-      <div className="border-t border-sidebar-border p-4">
-        <AnimatePresence mode="wait">
-          {isCollapsed ? (
-            <motion.div
-              key="collapsed-footer"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex justify-center"
-            >
-              <Avatar>
-                <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground font-semibold">
-                  N
-                </AvatarFallback>
-              </Avatar>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="expanded-footer"
-              variants={contentVariants}
-              initial="collapsed"
-              animate="expanded"
-              exit="collapsed"
-              className="flex items-center gap-3"
-            >
-              <Avatar>
-                <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground font-semibold">
-                  N
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-1 min-w-0">
-                <p className="text-slate-300 text-sm font-medium truncate">
-                  Nahuel Gómez Suárez
-                </p>
-                <p className="text-slate-500 text-xs">
-                  Online
-                </p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+      <SidebarHeader 
+        isCollapsed={isCollapsed} 
+        onToggle={toggleSidebar} 
+      />
+      
+      <SidebarContent
+        isCollapsed={isCollapsed}
+        chats={chats}
+        onCreateNewChat={createNewChat}
+      />
+      
+      <SidebarFooter isCollapsed={isCollapsed} />
     </motion.div>
   );
 };
