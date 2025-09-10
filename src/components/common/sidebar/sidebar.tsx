@@ -8,19 +8,7 @@ import {
   MessageSquare,
   Menu
 } from 'lucide-react';
-
-// Avatar component (simplified version of shadcn/ui avatar)
-const Avatar = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-  <div className={`relative flex h-10 w-10 shrink-0 overflow-hidden rounded-full ${className}`}>
-    {children}
-  </div>
-);
-
-const AvatarFallback = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-  <div className={`flex h-full w-full items-center justify-center rounded-full bg-slate-100 text-slate-900 ${className}`}>
-    {children}
-  </div>
-);
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const ChatSidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -70,26 +58,26 @@ const ChatSidebar = () => {
 
   return (
     <motion.div
-      className="h-screen bg-slate-900 border-r border-slate-700 flex flex-col relative"
+      className="h-screen bg-sidebar border-r border-sidebar-border flex flex-col relative"
       variants={sidebarVariants}
       animate={isCollapsed ? "collapsed" : "expanded"}
       transition={{ duration: 0.3, ease: "easeInOut" }}
     >
       {/* Header */}
-      <div className="p-4 border-b border-slate-700">
+      <div className="p-4 border-b border-sidebar-border">
         <div className="flex items-center justify-between">
           {/* Logo/Icon */}
           <div className="flex items-center">
             {isCollapsed ? (
               <button
                 onClick={toggleSidebar}
-                className="w-8 h-8 bg-slate-700 hover:bg-slate-600 rounded-lg flex items-center justify-center transition-colors"
+                className="w-8 h-8 bg-sidebar-accent hover:bg-sidebar-accent/80 rounded-lg flex items-center justify-center transition-colors"
               >
-                <Menu className="w-5 h-5 text-slate-300" />
+                <Menu className="w-5 h-5 text-sidebar-foreground" />
               </button>
             ) : (
-              <div className="w-8 h-8 bg-slate-700 rounded-lg flex items-center justify-center">
-                <div className="w-4 h-4 bg-slate-400 rounded-sm" />
+              <div className="w-8 h-8 bg-sidebar-accent rounded-lg flex items-center justify-center">
+                <div className="w-4 h-4 bg-sidebar-foreground/60 rounded-sm" />
               </div>
             )}
           </div>
@@ -102,9 +90,9 @@ const ChatSidebar = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 onClick={toggleSidebar}
-                className="p-2 hover:bg-slate-700 rounded-lg transition-colors"
+                className="p-2 hover:bg-sidebar-accent rounded-lg transition-colors"
               >
-                <ChevronLeft className="w-4 h-4 text-slate-400" />
+                <ChevronLeft className="w-4 h-4 text-sidebar-foreground/70" />
               </motion.button>
             )}
           </AnimatePresence>
@@ -126,10 +114,10 @@ const ChatSidebar = () => {
               {/* New Chat Button */}
               <button
                 onClick={createNewChat}
-                className="w-full p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors flex items-center justify-center"
+                className="w-full p-3 bg-sidebar-accent hover:bg-sidebar-accent/80 rounded-lg transition-colors flex items-center justify-center"
                 title="New Chat"
               >
-                <Plus className="w-5 h-5 text-slate-300" />
+                <Plus className="w-5 h-5 text-sidebar-foreground" />
               </button>
               
               {/* Chat List */}
@@ -137,10 +125,10 @@ const ChatSidebar = () => {
                 {chats.map((chat) => (
                   <button
                     key={chat.id}
-                    className="w-full p-3 hover:bg-slate-700 rounded-lg transition-colors flex items-center justify-center"
+                    className="w-full p-3 hover:bg-sidebar-accent rounded-lg transition-colors flex items-center justify-center"
                     title={chat.title}
                   >
-                    <MessageSquare className="w-5 h-5 text-slate-400" />
+                    <MessageSquare className="w-5 h-5 text-sidebar-foreground/70" />
                   </button>
                 ))}
               </div>
@@ -158,15 +146,15 @@ const ChatSidebar = () => {
               {/* New Chat Button */}
               <button
                 onClick={createNewChat}
-                className="w-full p-3 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors flex items-center gap-3"
+                className="w-full p-3 bg-sidebar-accent hover:bg-sidebar-accent/80 rounded-lg transition-colors flex items-center gap-3"
               >
-                <Plus className="w-5 h-5 text-slate-300" />
-                <span className="text-slate-300 font-medium">New Chat</span>
+                <Plus className="w-5 h-5 text-sidebar-foreground" />
+                <span className="text-sidebar-foreground font-medium">New Chat</span>
               </button>
 
               {/* Chat List */}
               <div className="space-y-2">
-                <h3 className="text-slate-400 text-sm font-medium px-2 mb-2">Recent Chats</h3>
+                <h3 className="text-sidebar-foreground/70 text-sm font-medium px-2 mb-2">Recent Chats</h3>
                 {chats.map((chat) => (
                   <button
                     key={chat.id}
@@ -192,7 +180,7 @@ const ChatSidebar = () => {
       </div>
 
       {/* Footer */}
-      <div className="border-t border-slate-700 p-4">
+      <div className="border-t border-sidebar-border p-4">
         <AnimatePresence mode="wait">
           {isCollapsed ? (
             <motion.div
@@ -203,7 +191,7 @@ const ChatSidebar = () => {
               className="flex justify-center"
             >
               <Avatar>
-                <AvatarFallback className="bg-blue-600 text-white font-semibold">
+                <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground font-semibold">
                   N
                 </AvatarFallback>
               </Avatar>
@@ -218,7 +206,7 @@ const ChatSidebar = () => {
               className="flex items-center gap-3"
             >
               <Avatar>
-                <AvatarFallback className="bg-blue-600 text-white font-semibold">
+                <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground font-semibold">
                   N
                 </AvatarFallback>
               </Avatar>
