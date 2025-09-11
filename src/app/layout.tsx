@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Ubuntu, Ubuntu_Mono } from "next/font/google";
 import "./globals.css";
-import Sidebar from "@/components/common/sidebar/sidebar";
 
 const ubuntuSans = Ubuntu({
   variable: "--font-ubuntu-sans",
@@ -31,10 +30,7 @@ export default function RootLayout({
   return (
     <html lang="es">
     <body className="bg-zinc-950 text-zinc-100">
-      <div className="flex min-h-screen">
-        <Sidebar />
-        <main className="flex-1">{children}</main>
-      </div>
+      {children}
     </body>
   </html>
   );

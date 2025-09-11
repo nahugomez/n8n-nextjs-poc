@@ -1,30 +1,45 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { SidebarHeader } from './sidebar-header';
 import { SidebarContent } from './sidebar-content';
 import { SidebarFooter } from './sidebar-footer';
+import { ChatSession, getChatSessions, createNewSession, saveChatSessions, setCurrentSessionId } from '@/lib/utils';
 
-const ChatSidebar = () => {
+interface ChatSidebarProps {
+  sessions?: ChatSession[];
+  onSessionSelect?: (sessionId: string) => void;
+  onNewSession?: (session: ChatSession) => void;
+  onSessionDelete?: (sessionId: string) => void;
+}
+
+const ChatSidebar = ({ sessions = [], onSessionSelect, onNewSession, onSessionDelete }: ChatSidebarProps) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-
-  // Sample chat data
-  const [chats] = useState([
-    { id: 1, title: "React Components Discussion", timestamp: "2 hours ago" },
-    { id: 2, title: "Next.js App Router Guide", timestamp: "1 day ago" },
-    { id: 3, title: "TailwindCSS Best Practices", timestamp: "2 days ago" },
-    { id: 4, title: "API Route Implementation", timestamp: "3 days ago" },
-    { id: 5, title: "Database Schema Design", timestamp: "1 week ago" },
-  ]);
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
   };
 
   const createNewChat = () => {
-    // Handle new chat creation
-    console.log("Creating new chat...");
+    const newSession = createNewSession();
+    setCurrentSessionId(newSession.id);
+    
+    if (onNewSession) {
+      onNewSession(newSession);
+    }
+    
+    if (onSessionSelect) {
+      onSessionSelect(newSession.id);
+    }
+  };
+
+  const handleSessionSelect = (sessionId: string) => {
+    setCurrentSessionId(sessionId);
+    
+    if (onSessionSelect) {
+      onSessionSelect(sessionId);
+    }
   };
 
   const sidebarVariants = {
@@ -66,8 +81,10 @@ const ChatSidebar = () => {
       
       <SidebarContent
         isCollapsed={isCollapsed}
-        chats={chats}
+        sessions={sessions}
         onCreateNewChat={createNewChat}
+        onSessionSelect={handleSessionSelect}
+        onSessionDelete={onSessionDelete}
       />
       
       <SidebarFooter isCollapsed={isCollapsed} />

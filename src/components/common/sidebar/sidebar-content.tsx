@@ -5,24 +5,22 @@ import { Plus } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { ChatListItem } from './chat-list-item';
 
-interface Chat {
-  id: number;
-  title: string;
-  timestamp: string;
-}
+import { ChatSession } from '@/lib/utils';
 
 interface SidebarContentProps {
   isCollapsed: boolean;
-  chats: Chat[];
+  sessions: ChatSession[];
   onCreateNewChat: () => void;
-  onChatSelect?: (chat: Chat) => void;
+  onSessionSelect?: (sessionId: string) => void;
+  onSessionDelete?: (sessionId: string) => void;
 }
 
 export function SidebarContent({ 
   isCollapsed, 
-  chats, 
+  sessions, 
   onCreateNewChat, 
-  onChatSelect 
+  onSessionSelect,
+  onSessionDelete
 }: SidebarContentProps) {
   return (
     <div className="flex-1 overflow-y-auto">
@@ -49,12 +47,13 @@ export function SidebarContent({
             
             {/* Chat List */}
             <div className="space-y-2">
-              {chats.map((chat) => (
+              {sessions.map((session) => (
                 <ChatListItem
-                  key={chat.id}
-                  chat={chat}
+                  key={session.id}
+                  session={session}
                   isCollapsed={isCollapsed}
-                  onClick={() => onChatSelect?.(chat)}
+                  onClick={() => onSessionSelect?.(session.id)}
+                  onDelete={onSessionDelete}
                 />
               ))}
             </div>
@@ -81,14 +80,15 @@ export function SidebarContent({
             {/* Chat List */}
             <div className="space-y-2">
               <h3 className="text-sidebar-foreground/70 text-sm font-medium px-2 mb-2">
-                Recent Chats
+                Conversaciones recientes
               </h3>
-              {chats.map((chat) => (
+              {sessions.map((session) => (
                 <ChatListItem
-                  key={chat.id}
-                  chat={chat}
+                  key={session.id}
+                  session={session}
                   isCollapsed={isCollapsed}
-                  onClick={() => onChatSelect?.(chat)}
+                  onClick={() => onSessionSelect?.(session.id)}
+                  onDelete={onSessionDelete}
                 />
               ))}
             </div>
