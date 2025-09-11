@@ -26,7 +26,10 @@
   - Se retorna directamente un JSON usando Respond to Webhook
 ```json
 {
-  "response": "Muy bien, ¡Gracias por preguntar!"
+  "response": {
+    "type": "message",
+    "data": "Hola, ¿como estás?"
+  }
 }
 ```
 - En caso de ser "audio":
@@ -35,7 +38,11 @@
   - Retorna un JSON con el audio en Base64
 ```json
 {
-  "response": "[Base64Audio]"
+  "response": {
+    "type": "audio",
+    "data": "[Base64Audio]",
+    "transcription": "Hola, ¿como estás?"
+  }
 }
 ```
 6. La aplicación Next.js, se encarga de mostrar el texto o reproducir el audio generado.
