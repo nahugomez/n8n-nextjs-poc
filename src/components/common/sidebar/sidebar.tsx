@@ -10,11 +10,10 @@ import { ChatSession, getChatSessions, createNewSession, saveChatSessions, setCu
 interface ChatSidebarProps {
   sessions?: ChatSession[];
   onSessionSelect?: (sessionId: string) => void;
-  onNewSession?: (session: ChatSession) => void;
   onSessionDelete?: (sessionId: string) => void;
 }
 
-const ChatSidebar = ({ sessions = [], onSessionSelect, onNewSession, onSessionDelete }: ChatSidebarProps) => {
+const ChatSidebar = ({ sessions = [], onSessionSelect, onSessionDelete }: ChatSidebarProps) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const toggleSidebar = () => {
@@ -22,15 +21,10 @@ const ChatSidebar = ({ sessions = [], onSessionSelect, onNewSession, onSessionDe
   };
 
   const createNewChat = () => {
-    const newSession = createNewSession();
-    setCurrentSessionId(newSession.id);
-    
-    if (onNewSession) {
-      onNewSession(newSession);
-    }
-    
+    // Clear current session without creating a new one
+    // The session will be created when the user sends the first message
     if (onSessionSelect) {
-      onSessionSelect(newSession.id);
+      onSessionSelect(''); // Empty string indicates no active session
     }
   };
 

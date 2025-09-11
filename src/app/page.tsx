@@ -39,7 +39,21 @@ export default function Home() {
   }, []);
 
   const handleSendMessage = (content: string) => {
-    if (!currentSession) return;
+    let targetSession = currentSession;
+    let shouldUpdateSessionsList = false;
+    
+    // If no current session exists, create a new one
+    if (!targetSession) {
+      targetSession = createNewSession();
+      setCurrentSession(targetSession);
+      setCurrentSessionId(targetSession.id);
+      
+      // Add the new session to the sessions list
+      const updatedSessions = [targetSession, ...sessions];
+      setSessions(updatedSessions);
+      saveChatSessions(updatedSessions);
+      shouldUpdateSessionsList = true;
+    }
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -49,13 +63,13 @@ export default function Home() {
     };
 
     const updatedSession = {
-      ...currentSession,
-      messages: [...currentSession.messages, userMessage],
+      ...targetSession,
+      messages: [...targetSession.messages, userMessage],
       updatedAt: new Date()
     };
 
     setCurrentSession(updatedSession);
-    updateSessions(updatedSession);
+    updateSessions(updatedSession, shouldUpdateSessionsList);
 
     const loadingMessage: ChatMessage = {
       id: 'loading-' + Date.now(),
@@ -71,7 +85,7 @@ export default function Home() {
     };
 
     setCurrentSession(sessionWithLoading);
-    updateSessions(sessionWithLoading);
+    updateSessions(sessionWithLoading, shouldUpdateSessionsList);
 
     setTimeout(() => {
       const sessionWithoutLoading = {
@@ -93,30 +107,39 @@ export default function Home() {
       };
 
       setCurrentSession(finalSession);
-      updateSessions(finalSession);
+      updateSessions(finalSession, shouldUpdateSessionsList);
     }, 1500);
   };
 
-  const updateSessions = (updatedSession: ChatSession) => {
-    const updatedSessions = sessions.map(s => 
-      s.id === updatedSession.id ? updatedSession : s
-    );
+  const updateSessions = (updatedSession: ChatSession, isNewSession: boolean = false) => {
+    let updatedSessions;
+    
+    if (isNewSession) {
+      // For new sessions, add it to the beginning of the list
+      updatedSessions = [updatedSession, ...sessions];
+    } else {
+      // For existing sessions, update the session in the list
+      updatedSessions = sessions.map(s => 
+        s.id === updatedSession.id ? updatedSession : s
+      );
+    }
+    
     setSessions(updatedSessions);
     saveChatSessions(updatedSessions);
   };
 
-  const handleNewSession = (session: ChatSession) => {
-    const updatedSessions = [session, ...sessions];
-    setSessions(updatedSessions);
-    setCurrentSession(session);
-    saveChatSessions(updatedSessions);
-  };
 
   const handleSessionSelect = (sessionId: string) => {
-    const session = sessions.find(s => s.id === sessionId);
-    if (session) {
-      setCurrentSession(session);
-      setCurrentSessionId(sessionId);
+    if (sessionId === '') {
+      // Clear current session for new chat
+      setCurrentSession(null);
+      setCurrentSessionId('');
+    } else {
+      const session = sessions.find(s => s.id === sessionId);
+      if (session) {
+        setCurrentSession(session);
+        setCurrentSessionId(sessionId);
+      }
     }
   };
 
@@ -125,18 +148,10 @@ export default function Home() {
     setSessions(updatedSessions);
     saveChatSessions(updatedSessions);
     
-    // If the deleted session was the current one, switch to another session or create new
+    // If the deleted session was the current one, clear the current session
     if (currentSession?.id === sessionId) {
-      if (updatedSessions.length > 0) {
-        setCurrentSession(updatedSessions[0]);
-        setCurrentSessionId(updatedSessions[0].id);
-      } else {
-        const newSession = createNewSession();
-        setCurrentSession(newSession);
-        setCurrentSessionId(newSession.id);
-        setSessions([newSession]);
-        saveChatSessions([newSession]);
-      }
+      setCurrentSession(null);
+      setCurrentSessionId('');
     }
   };
 
@@ -147,7 +162,6 @@ export default function Home() {
       <ChatSidebar 
         sessions={sessions}
         onSessionSelect={handleSessionSelect}
-        onNewSession={handleNewSession}
         onSessionDelete={handleSessionDelete}
       />
       
