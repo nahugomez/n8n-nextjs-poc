@@ -12,7 +12,9 @@ import {
   saveChatSessions, 
   getCurrentSessionId, 
   setCurrentSessionId,
-  createNewSession
+  createNewSession,
+  sendToN8NWebhook,
+  N8NResponse
 } from "@/lib/utils";
 
 export default function Home() {
@@ -87,28 +89,55 @@ export default function Home() {
     setCurrentSession(sessionWithLoading);
     updateSessions(sessionWithLoading, shouldUpdateSessionsList);
 
-    setTimeout(() => {
-      const sessionWithoutLoading = {
-        ...sessionWithLoading,
-        messages: sessionWithLoading.messages.filter(msg => !msg.isLoading)
-      };
+    // Call n8n webhook to get AI response
+    sendToN8NWebhook(targetSession.id, content)
+      .then((n8nResponse: N8NResponse) => {
+        const sessionWithoutLoading = {
+          ...sessionWithLoading,
+          messages: sessionWithLoading.messages.filter(msg => !msg.isLoading)
+        };
 
-      const aiMessage: ChatMessage = {
-        id: Date.now().toString(),
-        content: "¡Hola! ¿En qué puedo ayudarte hoy?",
-        isUser: false,
-        timestamp: new Date()
-      };
+        const aiMessage: ChatMessage = {
+          id: Date.now().toString(),
+          content: n8nResponse.response.data,
+          isUser: false,
+          timestamp: new Date()
+        };
 
-      const finalSession = {
-        ...sessionWithoutLoading,
-        messages: [...sessionWithoutLoading.messages, aiMessage],
-        updatedAt: new Date()
-      };
+        const finalSession = {
+          ...sessionWithoutLoading,
+          messages: [...sessionWithoutLoading.messages, aiMessage],
+          updatedAt: new Date()
+        };
 
-      setCurrentSession(finalSession);
-      updateSessions(finalSession, shouldUpdateSessionsList);
-    }, 1500);
+        setCurrentSession(finalSession);
+        updateSessions(finalSession, shouldUpdateSessionsList);
+      })
+      .catch((error) => {
+        console.error('Error calling n8n webhook:', error);
+        
+        // Remove loading message and show error
+        const sessionWithoutLoading = {
+          ...sessionWithLoading,
+          messages: sessionWithLoading.messages.filter(msg => !msg.isLoading)
+        };
+
+        const errorMessage: ChatMessage = {
+          id: Date.now().toString(),
+          content: "Lo siento, hubo un error al procesar tu mensaje. Por favor, intenta nuevamente.",
+          isUser: false,
+          timestamp: new Date()
+        };
+
+        const finalSession = {
+          ...sessionWithoutLoading,
+          messages: [...sessionWithoutLoading.messages, errorMessage],
+          updatedAt: new Date()
+        };
+
+        setCurrentSession(finalSession);
+        updateSessions(finalSession, shouldUpdateSessionsList);
+      });
   };
 
   const updateSessions = (updatedSession: ChatSession, isNewSession: boolean = false) => {

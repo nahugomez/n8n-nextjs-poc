@@ -91,3 +91,43 @@ export function setCurrentSessionId(sessionId: string): void {
     console.error('Failed to set current session ID:', error);
   }
 }
+
+export interface N8NResponse {
+  response: {
+    type: 'message' | 'audio';
+    data: string;
+    transcription?: string;
+  };
+}
+
+export async function sendToN8NWebhook(
+  sessionId: string,
+  message: string,
+  type: 'message' | 'audio' = 'message'
+): Promise<N8NResponse> {
+  const webhookUrl = process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL;
+  
+  if (!webhookUrl) {
+    throw new Error('N8N webhook URL is not configured');
+  }
+
+  const payload = {
+    session_id: sessionId,
+    type,
+    data: type === 'audio' ? message : message // For audio, message should be base64
+  };
+
+  const response = await fetch(webhookUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  return response.json();
+}
