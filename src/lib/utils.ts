@@ -11,6 +11,8 @@ export interface ChatMessage {
   isUser: boolean;
   isLoading?: boolean;
   timestamp: Date;
+  type?: 'text' | 'audio';
+  transcription?: string;
 }
 
 export interface ChatSession {
@@ -35,11 +37,11 @@ export function getChatSessions(): ChatSession[] {
     const parsedSessions = JSON.parse(sessions);
     
     // Convert string dates back to Date objects
-    return parsedSessions.map((session: any) => ({
+    return parsedSessions.map((session: { id: string; title: string; createdAt: string; updatedAt: string; messages: Array<{ id: string; content: string; isUser: boolean; isLoading?: boolean; timestamp: string; type?: string; transcription?: string }> }) => ({
       ...session,
       createdAt: new Date(session.createdAt),
       updatedAt: new Date(session.updatedAt),
-      messages: session.messages.map((message: any) => ({
+      messages: session.messages.map((message) => ({
         ...message,
         timestamp: new Date(message.timestamp)
       }))
@@ -111,10 +113,16 @@ export async function sendToN8NWebhook(
     throw new Error('N8N webhook URL is not configured');
   }
 
+  // For audio, extract base64 data from data URL
+  let processedData = message;
+  if (type === 'audio' && message.startsWith('data:audio/webm;base64,')) {
+    processedData = message.split(',')[1]; // Extract only the base64 part
+  }
+
   const payload = {
     session_id: sessionId,
     type,
-    data: type === 'audio' ? message : message // For audio, message should be base64
+    data: processedData
   };
 
   const response = await fetch(webhookUrl, {
@@ -130,4 +138,33 @@ export async function sendToN8NWebhook(
   }
 
   return response.json();
+}
+
+// Audio utility functions
+export function base64ToBlob(base64: string, mimeType: string = 'audio/webm'): Blob {
+  const byteCharacters = atob(base64);
+  const byteArrays = [];
+  
+  for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+    const slice = byteCharacters.slice(offset, offset + 512);
+    const byteNumbers = new Array(slice.length);
+    
+    for (let i = 0; i < slice.length; i++) {
+      byteNumbers[i] = slice.charCodeAt(i);
+    }
+    
+    const byteArray = new Uint8Array(byteNumbers);
+    byteArrays.push(byteArray);
+  }
+  
+  return new Blob(byteArrays, { type: mimeType });
+}
+
+export function createAudioUrlFromBase64(base64: string): string {
+  const blob = base64ToBlob(base64);
+  return URL.createObjectURL(blob);
+}
+
+export function cleanupAudioUrl(url: string): void {
+  URL.revokeObjectURL(url);
 }

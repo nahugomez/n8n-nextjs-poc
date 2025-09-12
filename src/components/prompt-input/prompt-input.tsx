@@ -4,6 +4,7 @@ import * as React from "react";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { AudioDialog } from "@/components/audio-dialog/audio-dialog";
 
 // --- Utility Function & Radix Primitives (Unchanged) ---
 type ClassValue = string | number | boolean | null | undefined;
@@ -56,6 +57,7 @@ export const PromptBox = React.forwardRef<HTMLTextAreaElement, PromptBoxProps>(
     const [selectedTool, setSelectedTool] = React.useState<string | null>(null);
     const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
     const [isImageDialogOpen, setIsImageDialogOpen] = React.useState(false);
+    const [isAudioDialogOpen, setIsAudioDialogOpen] = React.useState(false);
     React.useImperativeHandle(ref, () => internalTextareaRef.current!, []);
     React.useLayoutEffect(() => { const textarea = internalTextareaRef.current; if (textarea) { textarea.style.height = "auto"; const newHeight = Math.min(textarea.scrollHeight, 200); textarea.style.height = `${newHeight}px`; } }, [value]);
     const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => { setValue(e.target.value); if (props.onChange) props.onChange(e); };
@@ -77,6 +79,17 @@ export const PromptBox = React.forwardRef<HTMLTextAreaElement, PromptBoxProps>(
         setValue("");
         setImagePreview(null);
       }
+    };
+
+    const handleAudioRecorded = (audioData: string, duration: number) => {
+      if (onSubmit) {
+        onSubmit(audioData); // Send base64 audio data
+        setIsAudioDialogOpen(false);
+      }
+    };
+
+    const handleMicClick = () => {
+      setIsAudioDialogOpen(true);
     };
     
     const hasValue = value.trim().length > 0 || imagePreview;
@@ -130,7 +143,11 @@ export const PromptBox = React.forwardRef<HTMLTextAreaElement, PromptBoxProps>(
               <div className="flex gap-2 items-center ml-auto">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <button type="button" className="flex justify-center items-center w-8 h-8 text-black rounded-full transition-colors hover:bg-accent focus-visible:outline-none">
+                    <button 
+                      type="button" 
+                      onClick={handleMicClick}
+                      className="flex justify-center items-center w-8 h-8 text-black rounded-full transition-colors hover:bg-accent focus-visible:outline-none"
+                    >
                       <MicIcon className="w-5 h-5" />
                       <span className="sr-only">Record voice</span>
                     </button>
@@ -151,6 +168,13 @@ export const PromptBox = React.forwardRef<HTMLTextAreaElement, PromptBoxProps>(
             </div>
           </TooltipProvider>
         </div>
+
+        {/* Audio Dialog */}
+        <AudioDialog
+          open={isAudioDialogOpen}
+          onOpenChange={setIsAudioDialogOpen}
+          onAudioRecorded={handleAudioRecorded}
+        />
       </form>
     );
   }
