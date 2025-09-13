@@ -199,44 +199,49 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
               {aiAudioBase64 ? "Respuesta de audio" : "Grabar audio"}
             </h2>
             <p className="text-sm text-muted-foreground">
-              {aiAudioBase64 
+              {aiAudioBase64
                 ? "Escucha la respuesta y cierra el diálogo"
-                : isRecording 
-                  ? "Grabando... Habla ahora" 
-                  : recordedAudio 
-                    ? "Audio grabado. Puedes reproducirlo antes de enviar" 
+                : isRecording
+                  ? "Grabando... Habla ahora"
+                  : recordedAudio
+                    ? "Audio grabado. Haz clic para reproducir"
                     : "Haz clic en el micrófono para comenzar a grabar"}
             </p>
           </div>
 
-          <div className="flex items-center justify-center w-20 h-20 rounded-full bg-primary/10">
+          <div className="flex items-center justify-center w-24 h-24 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors cursor-pointer"
+               onClick={aiAudioBase64 ? undefined : (isRecording ? stopRecording : startRecording)}>
             {aiAudioBase64 ? (
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-12 h-12"
+                className="w-16 h-16"
                 onClick={playAIAudio}
                 disabled={isPlayingAI}
               >
                 {isPlayingAI ? (
-                  <div className="w-6 h-6 bg-green-500 rounded-full animate-pulse" />
+                  <div className="w-8 h-8 bg-green-500 rounded-full animate-pulse" />
                 ) : (
-                  <PlayIcon className="w-6 h-6" />
+                  <PlayIcon className="w-8 h-8" />
                 )}
               </Button>
             ) : isRecording ? (
-              <div className="w-8 h-8 bg-red-500 rounded-full animate-pulse" />
+              <div className="w-12 h-12 bg-red-500 rounded-full animate-pulse flex items-center justify-center">
+                <StopIcon className="w-6 h-6 text-white" />
+              </div>
             ) : recordedAudio ? (
               <Button
                 variant="ghost"
                 size="icon"
-                className="w-12 h-12"
+                className="w-16 h-16"
                 onClick={playRecordedAudio}
               >
-                <PlayIcon className="w-6 h-6" />
+                <PlayIcon className="w-8 h-8" />
               </Button>
             ) : (
-              <MicIcon className="w-8 h-8 text-primary" />
+              <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors">
+                <MicIcon className="w-8 h-8 text-white" />
+              </div>
             )}
           </div>
 
@@ -261,16 +266,7 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
               >
                 Cerrar
               </Button>
-            ) : !recordedAudio ? (
-              <Button
-                onClick={isRecording ? stopRecording : startRecording}
-                variant={isRecording ? "destructive" : "default"}
-                className="gap-2"
-              >
-                {isRecording ? <StopIcon className="w-4 h-4" /> : <MicIcon className="w-4 h-4" />}
-                {isRecording ? "Detener" : "Grabar"}
-              </Button>
-            ) : (
+            ) : recordedAudio ? (
               <>
                 <Button
                   onClick={resetRecording}
@@ -288,7 +284,7 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
                   Enviar
                 </Button>
               </>
-            )}
+            ) : null}
           </div>
 
           {/* Hidden audio elements for playback */}
