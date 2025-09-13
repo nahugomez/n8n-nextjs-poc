@@ -2,7 +2,7 @@
 
 import { MessageSquare, Trash2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { ChatSession } from '@/lib/utils';
+import { ChatSession } from '@/features/chat/types';
 
 interface ChatListItemProps {
   session: ChatSession;

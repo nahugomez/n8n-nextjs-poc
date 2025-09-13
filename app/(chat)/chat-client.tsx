@@ -1,25 +1,22 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { PromptBox } from "@/components/prompt-input/prompt-input";
-import { ChatBubble, ChatBubbleMessage, ChatBubbleAvatar } from "@/components/chat-bubble/chat-bubble";
-import { MessageLoading } from "@/components/chat-bubble/message-loading";
+import { PromptBox } from "@/components/chat/prompt-input/prompt-input";
+import { ChatBubble, ChatBubbleMessage, ChatBubbleAvatar } from "@/components/chat/chat-bubble/chat-bubble";
+import { MessageLoading } from "@/components/chat/chat-bubble/message-loading";
 import ChatSidebar from "@/components/common/sidebar/sidebar";
-import { 
-  ChatSession, 
-  ChatMessage, 
-  getChatSessions, 
-  saveChatSessions, 
-  getCurrentSessionId, 
+import { ChatSession, ChatMessage, N8NResponse } from "@/features/chat/types";
+import {
+  getChatSessions,
+  saveChatSessions,
+  getCurrentSessionId,
   setCurrentSessionId,
-  createNewSession,
-  sendToN8NWebhook,
-  N8NResponse
-} from "@/lib/utils";
-import { AudioDialog } from "@/components/audio-dialog/audio-dialog";
-import { PlayIcon } from "lucide-react";
+  createNewSession
+} from "@/lib/client-storage";
+import { sendToN8NWebhook } from "@/features/chat/server/actions";
+import { AudioDialog } from "@/components/chat/audio-dialog/audio-dialog";
 
-export default function Home() {
+const ChatClient = () => {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [currentSession, setCurrentSession] = useState<ChatSession | null>(null);
   const [audioDialogOpen, setAudioDialogOpen] = useState(false);
@@ -37,7 +34,7 @@ export default function Home() {
   useEffect(() => {
     const loadedSessions = getChatSessions();
     setSessions(loadedSessions);
-    
+
     const currentSessionId = getCurrentSessionId();
     if (currentSessionId) {
       const session = loadedSessions.find(s => s.id === currentSessionId);
@@ -64,13 +61,13 @@ export default function Home() {
   const sendMessage = (content: string, type: 'message' | 'audio') => {
     let targetSession = currentSession;
     let shouldUpdateSessionsList = false;
-    
+
     // If no current session exists, create a new one
     if (!targetSession) {
       targetSession = createNewSession();
       setCurrentSession(targetSession);
       setCurrentSessionId(targetSession.id);
-      
+
       // Add the new session to the sessions list
       const updatedSessions = [targetSession, ...sessions];
       setSessions(updatedSessions);
@@ -83,7 +80,7 @@ export default function Home() {
       content: type === 'audio' ? 'Mensaje de audio (transcripción pendiente)' : content,
       isUser: true,
       timestamp: new Date(),
-      type,
+      type: type === 'message' ? 'text' : type,
       ...(type === 'audio' && { audioBase64: content })
     };
 
@@ -178,7 +175,7 @@ export default function Home() {
       })
       .catch((error) => {
         console.error('Error calling n8n webhook:', error);
-        
+
         // Remove loading message and show error
         const sessionWithoutLoading = {
           ...sessionWithLoading,
@@ -205,21 +202,20 @@ export default function Home() {
 
   const updateSessions = (updatedSession: ChatSession, isNewSession: boolean = false) => {
     let updatedSessions;
-    
+
     if (isNewSession) {
       // For new sessions, add it to the beginning of the list
       updatedSessions = [updatedSession, ...sessions];
     } else {
       // For existing sessions, update the session in the list
-      updatedSessions = sessions.map(s => 
+      updatedSessions = sessions.map(s =>
         s.id === updatedSession.id ? updatedSession : s
       );
     }
-    
+
     setSessions(updatedSessions);
     saveChatSessions(updatedSessions);
   };
-
 
   const handleSessionSelect = (sessionId: string) => {
     if (sessionId === '') {
@@ -239,7 +235,7 @@ export default function Home() {
     const updatedSessions = sessions.filter(s => s.id !== sessionId);
     setSessions(updatedSessions);
     saveChatSessions(updatedSessions);
-    
+
     // If the deleted session was the current one, clear the current session
     if (currentSession?.id === sessionId) {
       setCurrentSession(null);
@@ -251,12 +247,12 @@ export default function Home() {
 
   return (
     <div className="flex w-full h-screen bg-background">
-      <ChatSidebar 
+      <ChatSidebar
         sessions={sessions}
         onSessionSelect={handleSessionSelect}
         onSessionDelete={handleSessionDelete}
       />
-      
+
       <div className="flex-1 flex flex-col">
         {messages.length > 0 ? (
           <>
@@ -267,7 +263,7 @@ export default function Home() {
                     {!message.isUser && (
                       <ChatBubbleAvatar fallback="AI" />
                     )}
-                    <ChatBubbleMessage 
+                    <ChatBubbleMessage
                       variant={message.isUser ? "sent" : "received"}
                       isLoading={message.isLoading}
                     >
@@ -321,4 +317,6 @@ export default function Home() {
       </div>
     </div>
   );
-}
+};
+
+export default ChatClient;

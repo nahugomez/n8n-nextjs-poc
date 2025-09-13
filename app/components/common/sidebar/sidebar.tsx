@@ -5,7 +5,8 @@ import { motion } from 'framer-motion';
 import { SidebarHeader } from './sidebar-header';
 import { SidebarContent } from './sidebar-content';
 import { SidebarFooter } from './sidebar-footer';
-import { ChatSession, getChatSessions, createNewSession, saveChatSessions, setCurrentSessionId } from '@/lib/utils';
+import { ChatSession } from '@/features/chat/types';
+import { setCurrentSessionId } from '@/lib/client-storage';
 
 interface ChatSidebarProps {
   sessions?: ChatSession[];

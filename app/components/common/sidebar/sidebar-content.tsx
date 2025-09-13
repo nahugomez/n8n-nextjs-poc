@@ -5,7 +5,7 @@ import { Plus } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { ChatListItem } from './chat-list-item';
 
-import { ChatSession } from '@/lib/utils';
+import { ChatSession } from '@/features/chat/types';
 
 interface SidebarContentProps {
   isCollapsed: boolean;
