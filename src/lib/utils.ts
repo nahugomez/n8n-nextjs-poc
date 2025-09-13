@@ -11,6 +11,9 @@ export interface ChatMessage {
   isUser: boolean;
   isLoading?: boolean;
   timestamp: Date;
+  type?: 'text' | 'audio';
+  audioBase64?: string;
+  transcription?: string;
 }
 
 export interface ChatSession {

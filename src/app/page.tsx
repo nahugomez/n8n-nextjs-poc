@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { PromptBox } from "@/components/prompt-input/prompt-input";
 import { ChatBubble, ChatBubbleMessage, ChatBubbleAvatar } from "@/components/chat-bubble/chat-bubble";
 import { MessageLoading } from "@/components/chat-bubble/message-loading";
@@ -16,10 +16,20 @@ import {
   sendToN8NWebhook,
   N8NResponse
 } from "@/lib/utils";
+import { PlayIcon } from "lucide-react";
 
 export default function Home() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [currentSession, setCurrentSession] = useState<ChatSession | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const playAudio = (base64Audio: string) => {
+    if (audioRef.current) {
+      const audioUrl = `data:audio/webm;base64,${base64Audio}`;
+      audioRef.current.src = audioUrl;
+      audioRef.current.play().catch(console.error);
+    }
+  };
 
   useEffect(() => {
     const loadedSessions = getChatSessions();
@@ -41,6 +51,14 @@ export default function Home() {
   }, []);
 
   const handleSendMessage = (content: string) => {
+    sendMessage(content, 'message');
+  };
+
+  const handleSendAudio = (audioBase64: string) => {
+    sendMessage(audioBase64, 'audio');
+  };
+
+  const sendMessage = (content: string, type: 'message' | 'audio') => {
     let targetSession = currentSession;
     let shouldUpdateSessionsList = false;
     
@@ -59,9 +77,11 @@ export default function Home() {
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
-      content,
+      content: type === 'audio' ? '🎤 Mensaje de audio' : content,
       isUser: true,
-      timestamp: new Date()
+      timestamp: new Date(),
+      type,
+      ...(type === 'audio' && { audioBase64: content })
     };
 
     const updatedSession = {
@@ -90,7 +110,7 @@ export default function Home() {
     updateSessions(sessionWithLoading, shouldUpdateSessionsList);
 
     // Call n8n webhook to get AI response
-    sendToN8NWebhook(targetSession.id, content)
+    sendToN8NWebhook(targetSession.id, content, type)
       .then((n8nResponse: N8NResponse) => {
         const sessionWithoutLoading = {
           ...sessionWithLoading,
@@ -99,9 +119,16 @@ export default function Home() {
 
         const aiMessage: ChatMessage = {
           id: Date.now().toString(),
-          content: n8nResponse.response.data,
+          content: n8nResponse.response.type === 'audio' 
+            ? '🎵 Respuesta de audio' 
+            : n8nResponse.response.data,
           isUser: false,
-          timestamp: new Date()
+          timestamp: new Date(),
+          type: n8nResponse.response.type,
+          ...(n8nResponse.response.type === 'audio' && { 
+            audioBase64: n8nResponse.response.data,
+            transcription: n8nResponse.response.transcription
+          })
         };
 
         const finalSession = {
@@ -208,7 +235,27 @@ export default function Home() {
                       variant={message.isUser ? "sent" : "received"}
                       isLoading={message.isLoading}
                     >
-                      {message.isLoading ? null : message.content}
+                      {message.isLoading ? null : (
+                        <>
+                          {message.content}
+                          {message.type === 'audio' && message.audioBase64 && (
+                            <div className="mt-2 flex items-center gap-2">
+                              <button
+                                onClick={() => playAudio(message.audioBase64!)}
+                                className="flex items-center gap-1 px-2 py-1 text-xs bg-primary/10 rounded-md hover:bg-primary/20 transition-colors"
+                              >
+                                <PlayIcon className="w-3 h-3" />
+                                {message.isUser ? 'Reproducir mi audio' : 'Reproducir respuesta'}
+                              </button>
+                              {message.transcription && !message.isUser && (
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  <em>Transcripción: {message.transcription}</em>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </>
+                      )}
                     </ChatBubbleMessage>
                     {message.isUser && (
                       <ChatBubbleAvatar fallback="Tú" />
@@ -219,7 +266,7 @@ export default function Home() {
             </div>
             <div className="p-4 border-t">
               <div className="max-w-2xl mx-auto">
-                <PromptBox onSubmit={handleSendMessage} />
+                <PromptBox onSubmit={handleSendMessage} onSendAudio={handleSendAudio} />
               </div>
             </div>
           </>
@@ -229,10 +276,13 @@ export default function Home() {
               <p className="text-3xl text-foreground mb-10">
                 ¿En qué puedo ayudarte?
               </p>
-              <PromptBox onSubmit={handleSendMessage} />
+              <PromptBox onSubmit={handleSendMessage} onSendAudio={handleSendAudio} />
             </div>
           </div>
         )}
+
+        {/* Hidden audio element for playback */}
+        <audio ref={audioRef} className="hidden" />
       </div>
     </div>
   );

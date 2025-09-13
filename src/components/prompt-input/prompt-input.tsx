@@ -4,6 +4,7 @@ import * as React from "react";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { AudioDialog } from "@/components/audio-dialog/audio-dialog";
 
 // --- Utility Function & Radix Primitives (Unchanged) ---
 type ClassValue = string | number | boolean | null | undefined;
@@ -44,10 +45,11 @@ const toolsList = [ { id: 'createImage', name: 'Create an image', shortName: 'Im
 // --- The Final, Self-Contained PromptBox Component ---
 interface PromptBoxProps extends Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, 'onSubmit'> {
   onSubmit?: (message: string) => void;
+  onSendAudio?: (audioBase64: string) => void;
 }
 
 export const PromptBox = React.forwardRef<HTMLTextAreaElement, PromptBoxProps>(
-  ({ className, onSubmit, ...props }, ref) => {
+  ({ className, onSubmit, onSendAudio, ...props }, ref) => {
     // ... all state and handlers are unchanged ...
     const internalTextareaRef = React.useRef<HTMLTextAreaElement>(null);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -56,6 +58,7 @@ export const PromptBox = React.forwardRef<HTMLTextAreaElement, PromptBoxProps>(
     const [selectedTool, setSelectedTool] = React.useState<string | null>(null);
     const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
     const [isImageDialogOpen, setIsImageDialogOpen] = React.useState(false);
+    const [isAudioDialogOpen, setIsAudioDialogOpen] = React.useState(false);
     React.useImperativeHandle(ref, () => internalTextareaRef.current!, []);
     React.useLayoutEffect(() => { const textarea = internalTextareaRef.current; if (textarea) { textarea.style.height = "auto"; const newHeight = Math.min(textarea.scrollHeight, 200); textarea.style.height = `${newHeight}px`; } }, [value]);
     const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => { setValue(e.target.value); if (props.onChange) props.onChange(e); };
@@ -76,6 +79,12 @@ export const PromptBox = React.forwardRef<HTMLTextAreaElement, PromptBoxProps>(
         onSubmit(value.trim());
         setValue("");
         setImagePreview(null);
+      }
+    };
+
+    const handleSendAudio = (audioBase64: string) => {
+      if (onSendAudio) {
+        onSendAudio(audioBase64);
       }
     };
     
@@ -130,7 +139,11 @@ export const PromptBox = React.forwardRef<HTMLTextAreaElement, PromptBoxProps>(
               <div className="flex gap-2 items-center ml-auto">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <button type="button" className="flex justify-center items-center w-8 h-8 text-black rounded-full transition-colors hover:bg-accent focus-visible:outline-none">
+                    <button 
+                      type="button" 
+                      className="flex justify-center items-center w-8 h-8 text-black rounded-full transition-colors hover:bg-accent focus-visible:outline-none"
+                      onClick={() => setIsAudioDialogOpen(true)}
+                    >
                       <MicIcon className="w-5 h-5" />
                       <span className="sr-only">Record voice</span>
                     </button>
@@ -151,6 +164,13 @@ export const PromptBox = React.forwardRef<HTMLTextAreaElement, PromptBoxProps>(
             </div>
           </TooltipProvider>
         </div>
+
+        {/* Audio Dialog */}
+        <AudioDialog
+          open={isAudioDialogOpen}
+          onOpenChange={setIsAudioDialogOpen}
+          onSendAudio={handleSendAudio}
+        />
       </form>
     );
   }
