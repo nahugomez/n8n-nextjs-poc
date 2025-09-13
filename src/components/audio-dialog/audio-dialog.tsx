@@ -94,12 +94,9 @@ DialogContent.displayName = DialogPrimitive.Content.displayName;
 
 export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, aiTranscription, userTranscription }: AudioDialogProps) {
   const [isRecording, setIsRecording] = React.useState(false);
-  const [recordedAudio, setRecordedAudio] = React.useState<string | null>(null);
-  const [audioBlob, setAudioBlob] = React.useState<Blob | null>(null);
   const [isPlayingAI, setIsPlayingAI] = React.useState(false);
   const mediaRecorderRef = React.useRef<MediaRecorder | null>(null);
   const audioChunksRef = React.useRef<Blob[]>([]);
-  const audioRef = React.useRef<HTMLAudioElement | null>(null);
   const aiAudioRef = React.useRef<HTMLAudioElement | null>(null);
 
   const startRecording = async () => {
@@ -117,15 +114,16 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
       
       mediaRecorderRef.current.onstop = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        setAudioBlob(audioBlob);
-        
+
         const reader = new FileReader();
         reader.onloadend = () => {
           const base64data = reader.result as string;
-          setRecordedAudio(base64data);
+          // Extract base64 data from data URL and send immediately
+          const base64Data = base64data.split(',')[1];
+          onSendAudio(base64Data);
         };
         reader.readAsDataURL(audioBlob);
-        
+
         // Stop all audio tracks
         stream.getTracks().forEach(track => track.stop());
       };
@@ -145,13 +143,6 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
     }
   };
 
-  const playRecordedAudio = () => {
-    if (audioBlob && audioRef.current) {
-      const audioUrl = URL.createObjectURL(audioBlob);
-      audioRef.current.src = audioUrl;
-      audioRef.current.play().catch(console.error);
-    }
-  };
 
   const playAIAudio = () => {
     if (aiAudioBase64 && aiAudioRef.current) {
@@ -166,20 +157,8 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
     setIsPlayingAI(false);
   };
 
-  const handleSend = () => {
-    if (recordedAudio) {
-      // Extract base64 data from data URL (remove "data:audio/webm;base64," prefix)
-      const base64Data = recordedAudio.split(',')[1];
-      onSendAudio(base64Data);
-      resetRecording();
-      // Dialog remains open to receive AI response
-    }
-  };
-
   const resetRecording = () => {
     setIsRecording(false);
-    setRecordedAudio(null);
-    setAudioBlob(null);
     setIsPlayingAI(false);
     audioChunksRef.current = [];
   };
@@ -203,9 +182,7 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
                 ? "Escucha la respuesta y cierra el diálogo"
                 : isRecording
                   ? "Grabando... Habla ahora"
-                  : recordedAudio
-                    ? "Audio grabado. Haz clic para reproducir"
-                    : "Haz clic en el micrófono para comenzar a grabar"}
+                  : "Haz clic en el micrófono para comenzar a grabar"}
             </p>
           </div>
 
@@ -229,15 +206,6 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
               <div className="w-12 h-12 bg-red-500 rounded-full animate-pulse flex items-center justify-center">
                 <StopIcon className="w-6 h-6 text-white" />
               </div>
-            ) : recordedAudio ? (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="w-16 h-16"
-                onClick={playRecordedAudio}
-              >
-                <PlayIcon className="w-8 h-8" />
-              </Button>
             ) : (
               <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors">
                 <MicIcon className="w-8 h-8 text-white" />
@@ -258,40 +226,21 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
             </div>
           )}
 
-          <div className="flex gap-2">
-            {aiAudioBase64 ? (
+          {aiAudioBase64 && (
+            <div className="flex gap-2">
               <Button
                 onClick={() => onOpenChange(false)}
                 className="gap-2"
               >
                 Cerrar
               </Button>
-            ) : recordedAudio ? (
-              <>
-                <Button
-                  onClick={resetRecording}
-                  variant="outline"
-                  className="gap-2"
-                >
-                  <XIcon className="w-4 h-4" />
-                  Regrabar
-                </Button>
-                <Button
-                  onClick={handleSend}
-                  className="gap-2"
-                >
-                  <SendIcon className="w-4 h-4" />
-                  Enviar
-                </Button>
-              </>
-            ) : null}
-          </div>
+            </div>
+          )}
 
-          {/* Hidden audio elements for playback */}
-          <audio ref={audioRef} className="hidden" />
-          <audio 
-            ref={aiAudioRef} 
-            className="hidden" 
+          {/* Hidden audio element for AI audio playback */}
+          <audio
+            ref={aiAudioRef}
+            className="hidden"
             onEnded={handleAIAudioEnded}
           />
         </div>
