@@ -41,7 +41,8 @@
   "response": {
     "type": "audio",
     "data": "[Base64Audio]",
-    "transcription": "Hola, ¿como estás?"
+    "transcription": "Hola, ¿como estás?",
+    "userTranscription": "Hola!"
   }
 }
 ```

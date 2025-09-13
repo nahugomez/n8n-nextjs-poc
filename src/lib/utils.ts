@@ -14,6 +14,7 @@ export interface ChatMessage {
   type?: 'text' | 'audio';
   audioBase64?: string;
   transcription?: string;
+  isAudioTranscription?: boolean;
 }
 
 export interface ChatSession {
@@ -100,6 +101,7 @@ export interface N8NResponse {
     type: 'message' | 'audio';
     data: string;
     transcription?: string;
+    userTranscription?: string;
   };
 }
 

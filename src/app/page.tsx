@@ -16,11 +16,14 @@ import {
   sendToN8NWebhook,
   N8NResponse
 } from "@/lib/utils";
+import { AudioDialog } from "@/components/audio-dialog/audio-dialog";
 import { PlayIcon } from "lucide-react";
 
 export default function Home() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [currentSession, setCurrentSession] = useState<ChatSession | null>(null);
+  const [audioDialogOpen, setAudioDialogOpen] = useState(false);
+  const [aiAudioResponse, setAiAudioResponse] = useState<{base64: string; transcription: string; userTranscription: string} | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const playAudio = (base64Audio: string) => {
@@ -77,7 +80,7 @@ export default function Home() {
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
-      content: type === 'audio' ? '🎤 Mensaje de audio' : content,
+      content: type === 'audio' ? 'Mensaje de audio (transcripción pendiente)' : content,
       isUser: true,
       timestamp: new Date(),
       type,
@@ -117,28 +120,61 @@ export default function Home() {
           messages: sessionWithLoading.messages.filter(msg => !msg.isLoading)
         };
 
-        const aiMessage: ChatMessage = {
-          id: Date.now().toString(),
-          content: n8nResponse.response.type === 'audio' 
-            ? '🎵 Respuesta de audio' 
-            : n8nResponse.response.data,
-          isUser: false,
-          timestamp: new Date(),
-          type: n8nResponse.response.type,
-          ...(n8nResponse.response.type === 'audio' && { 
-            audioBase64: n8nResponse.response.data,
-            transcription: n8nResponse.response.transcription
-          })
-        };
+        if (n8nResponse.response.type === 'audio') {
+          // For audio responses, show the audio dialog instead of adding to chat
+          setAiAudioResponse({
+            base64: n8nResponse.response.data,
+            transcription: n8nResponse.response.transcription || '',
+            userTranscription: n8nResponse.response.userTranscription || ''
+          });
+          setAudioDialogOpen(true);
 
-        const finalSession = {
-          ...sessionWithoutLoading,
-          messages: [...sessionWithoutLoading.messages, aiMessage],
-          updatedAt: new Date()
-        };
+          // Add transcriptions to chat instead of audio files
+          const userMessageIndex = sessionWithoutLoading.messages.findIndex(msg => msg.isUser && msg.type === 'audio');
+          if (userMessageIndex !== -1 && n8nResponse.response.userTranscription) {
+            // Update user message with transcription
+            sessionWithoutLoading.messages[userMessageIndex] = {
+              ...sessionWithoutLoading.messages[userMessageIndex],
+              content: n8nResponse.response.userTranscription
+            };
+          }
 
-        setCurrentSession(finalSession);
-        updateSessions(finalSession, shouldUpdateSessionsList);
+          const aiMessage: ChatMessage = {
+            id: Date.now().toString(),
+            content: n8nResponse.response.transcription || 'Respuesta de audio',
+            isUser: false,
+            timestamp: new Date(),
+            type: 'text', // Store as text since audio is handled in dialog
+            isAudioTranscription: true
+          };
+
+          const finalSession = {
+            ...sessionWithoutLoading,
+            messages: [...sessionWithoutLoading.messages, aiMessage],
+            updatedAt: new Date()
+          };
+
+          setCurrentSession(finalSession);
+          updateSessions(finalSession, shouldUpdateSessionsList);
+        } else {
+          // For text responses, add normally to chat
+          const aiMessage: ChatMessage = {
+            id: Date.now().toString(),
+            content: n8nResponse.response.data,
+            isUser: false,
+            timestamp: new Date(),
+            type: 'text'
+          };
+
+          const finalSession = {
+            ...sessionWithoutLoading,
+            messages: [...sessionWithoutLoading.messages, aiMessage],
+            updatedAt: new Date()
+          };
+
+          setCurrentSession(finalSession);
+          updateSessions(finalSession, shouldUpdateSessionsList);
+        }
       })
       .catch((error) => {
         console.error('Error calling n8n webhook:', error);
@@ -238,20 +274,9 @@ export default function Home() {
                       {message.isLoading ? null : (
                         <>
                           {message.content}
-                          {message.type === 'audio' && message.audioBase64 && (
-                            <div className="mt-2 flex items-center gap-2">
-                              <button
-                                onClick={() => playAudio(message.audioBase64!)}
-                                className="flex items-center gap-1 px-2 py-1 text-xs bg-primary/10 rounded-md hover:bg-primary/20 transition-colors"
-                              >
-                                <PlayIcon className="w-3 h-3" />
-                                {message.isUser ? 'Reproducir mi audio' : 'Reproducir respuesta'}
-                              </button>
-                              {message.transcription && !message.isUser && (
-                                <div className="text-xs text-muted-foreground mt-1">
-                                  <em>Transcripción: {message.transcription}</em>
-                                </div>
-                              )}
+                          {((message.type === 'audio' && message.audioBase64) || message.isAudioTranscription) && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              <em>Transcripción de audio</em>
                             </div>
                           )}
                         </>
@@ -269,6 +294,16 @@ export default function Home() {
                 <PromptBox onSubmit={handleSendMessage} onSendAudio={handleSendAudio} />
               </div>
             </div>
+
+            {/* Audio Dialog for AI responses */}
+            <AudioDialog
+              open={audioDialogOpen}
+              onOpenChange={setAudioDialogOpen}
+              onSendAudio={handleSendAudio}
+              aiAudioBase64={aiAudioResponse?.base64}
+              aiTranscription={aiAudioResponse?.transcription}
+              userTranscription={aiAudioResponse?.userTranscription}
+            />
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center p-4">
