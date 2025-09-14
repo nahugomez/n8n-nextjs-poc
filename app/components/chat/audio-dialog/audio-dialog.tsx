@@ -90,17 +90,11 @@ const AudioPlaybackButton = ({ isPlaying, onPlay }: AudioPlaybackButtonProps) =>
 );
 
 interface TranscriptionDisplayProps {
-  userTranscription?: string;
   aiTranscription?: string;
 }
 
-const TranscriptionDisplay = ({ userTranscription, aiTranscription }: TranscriptionDisplayProps) => (
+const TranscriptionDisplay = ({ aiTranscription }: TranscriptionDisplayProps) => (
   <>
-    {userTranscription && (
-      <div className="text-center text-sm text-muted-foreground max-w-xs">
-        <p><strong>Tu mensaje:</strong> {userTranscription}</p>
-      </div>
-    )}
 
     {aiTranscription && (
       <div className="text-center text-sm text-muted-foreground max-w-xs">
@@ -200,20 +194,8 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
           )}
 
           <TranscriptionDisplay
-            userTranscription={userTranscription}
             aiTranscription={aiTranscription}
           />
-
-          {aiAudioBase64 && (
-            <div className="flex gap-2">
-              <Button
-                onClick={() => onOpenChange(false)}
-                className="gap-2"
-              >
-                Cerrar
-              </Button>
-            </div>
-          )}
 
           {/* Hidden audio element for AI audio playback */}
           <audio
