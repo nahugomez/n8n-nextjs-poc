@@ -4,7 +4,6 @@ import * as React from "react";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import * as PopoverPrimitive from "@radix-ui/react-popover";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
-import { AudioDialog } from "../audio-dialog/audio-dialog";
 import { PlusIcon } from "@/components/icons/plus-icon";
 import { Settings2Icon } from "@/components/icons/settings2-icon";
 import { SendIcon } from "@/components/icons/send-icon";
@@ -280,10 +279,12 @@ const ActionButtons = ({ hasValue, onAudioClick, onSubmit }: ActionButtonsProps)
 interface PromptBoxProps extends Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, 'onSubmit'> {
   onSubmit?: (message: string) => void;
   onSendAudio?: (audioBase64: string) => void;
+  onOpenAudioDialog?: () => void;
 }
 
 export const PromptBox = React.forwardRef<HTMLTextAreaElement, PromptBoxProps>(
-  ({ className, onSubmit, onSendAudio, ...props }, ref) => {
+  ({ className, onSubmit, onSendAudio, onOpenAudioDialog, ...props }, ref) => {
+
     // ... all state and handlers are unchanged ...
     const internalTextareaRef = React.useRef<HTMLTextAreaElement>(null);
     const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -292,7 +293,8 @@ export const PromptBox = React.forwardRef<HTMLTextAreaElement, PromptBoxProps>(
     const [selectedTool, setSelectedTool] = React.useState<string | null>(null);
     const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
     const [isImageDialogOpen, setIsImageDialogOpen] = React.useState(false);
-    const [isAudioDialogOpen, setIsAudioDialogOpen] = React.useState(false);
+    // Audio dialog is now controlled by parent; no local state here
+
     React.useImperativeHandle(ref, () => internalTextareaRef.current!, []);
     React.useLayoutEffect(() => { const textarea = internalTextareaRef.current; if (textarea) { textarea.style.height = "auto"; const newHeight = Math.min(textarea.scrollHeight, 200); textarea.style.height = `${newHeight}px`; } }, [value]);
     const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => { setValue(e.target.value); if (props.onChange) props.onChange(e); };
@@ -368,19 +370,14 @@ export const PromptBox = React.forwardRef<HTMLTextAreaElement, PromptBoxProps>(
 
               <ActionButtons
                 hasValue={hasValue}
-                onAudioClick={() => setIsAudioDialogOpen(true)}
+                onAudioClick={() => onOpenAudioDialog?.()}
                 onSubmit={handleSubmit}
               />
             </div>
           </TooltipProvider>
         </div>
 
-        {/* Audio Dialog */}
-        <AudioDialog
-          open={isAudioDialogOpen}
-          onOpenChange={setIsAudioDialogOpen}
-          onSendAudio={handleSendAudio}
-        />
+        {/* Audio Dialog handled by parent */}
       </form>
     );
   }

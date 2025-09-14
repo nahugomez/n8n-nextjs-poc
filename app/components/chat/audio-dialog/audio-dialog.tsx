@@ -7,6 +7,7 @@ import { useAudioRecorder } from "@/hooks/use-audio-recorder";
 import { MicIcon } from "@/components/icons/mic-icon";
 import { StopIcon } from "@/components/icons/stop-icon";
 import { PlayIcon } from "@/components/icons/play-icon";
+import { MessageLoading } from "@/components/chat/chat-bubble/message-loading";
 
 interface AudioDialogProps {
   open: boolean;
@@ -15,25 +16,29 @@ interface AudioDialogProps {
   aiAudioBase64?: string;
   aiTranscription?: string;
   userTranscription?: string;
+  onPlaybackEnded?: () => void;
 }
 
 // Internal Components
 interface DialogHeaderProps {
   hasAIAudio: boolean;
   isRecording: boolean;
+  isProcessing: boolean;
 }
 
-const DialogHeader = ({ hasAIAudio, isRecording }: DialogHeaderProps) => (
+const DialogHeader = ({ hasAIAudio, isRecording, isProcessing }: DialogHeaderProps) => (
   <div className="text-center">
     <h2 className="text-lg font-semibold">
-      {hasAIAudio ? "Respuesta de audio" : "Grabar audio"}
+      {hasAIAudio ? "Respuesta de audio" : isProcessing ? "Procesando..." : "Grabar audio"}
     </h2>
     <p className="text-sm text-muted-foreground">
       {hasAIAudio
-        ? "Escucha la respuesta y cierra el diálogo"
-        : isRecording
-          ? "Grabando... Habla ahora"
-          : "Haz clic en el micrófono para comenzar a grabar"}
+        ? "Reproduciendo la respuesta generada"
+        : isProcessing
+          ? "Estamos procesando tu mensaje..."
+          : isRecording
+            ? "Grabando... Habla ahora"
+            : "Haz clic en el micrófono para comenzar a grabar"}
     </p>
   </div>
 );
@@ -105,10 +110,12 @@ const TranscriptionDisplay = ({ userTranscription, aiTranscription }: Transcript
   </>
 );
 
-export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, aiTranscription, userTranscription }: AudioDialogProps) {
+export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, aiTranscription, userTranscription, onPlaybackEnded }: AudioDialogProps) {
   const [isPlayingAI, setIsPlayingAI] = React.useState(false);
   const aiAudioRef = React.useRef<HTMLAudioElement | null>(null);
   const { isRecording, startRecording, stopRecording, resetRecording } = useAudioRecorder();
+  const [isProcessing, setIsProcessing] = React.useState(false);
+  const hasAutoPlayedRef = React.useRef<string | null>(null);
 
   const handleStartRecording = async () => {
     try {
@@ -122,6 +129,8 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
     const audioBase64 = await stopRecording();
     if (audioBase64) {
       onSendAudio(audioBase64);
+      // Show processing state while waiting for AI response
+      setIsProcessing(true);
     }
   };
 
@@ -136,14 +145,31 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
 
   const handleAIAudioEnded = () => {
     setIsPlayingAI(false);
+    setIsProcessing(false);
+    // Notify parent so it can clear AI audio and return to mic state
+    // (keeping dialog open for next recording)
+    // The parent can reset aiAudioBase64/aiTranscription/userTranscription
+    onPlaybackEnded?.();
   };
 
   React.useEffect(() => {
     if (!open) {
       resetRecording();
       setIsPlayingAI(false);
+      setIsProcessing(false);
+      hasAutoPlayedRef.current = null;
     }
   }, [open, resetRecording]);
+
+  // Auto-play AI audio when it arrives
+  React.useEffect(() => {
+    if (!open) return;
+    if (!aiAudioBase64) return;
+    if (hasAutoPlayedRef.current === aiAudioBase64) return;
+    setIsProcessing(false);
+    hasAutoPlayedRef.current = aiAudioBase64;
+    playAIAudio();
+  }, [aiAudioBase64, open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -152,9 +178,15 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
           <DialogHeader
             hasAIAudio={!!aiAudioBase64}
             isRecording={isRecording}
+            isProcessing={isProcessing}
           />
 
-          {aiAudioBase64 ? (
+          {isProcessing ? (
+            <div className="flex flex-col items-center justify-center py-6">
+              <MessageLoading />
+              <p className="mt-3 text-sm text-muted-foreground">Procesando respuesta...</p>
+            </div>
+          ) : aiAudioBase64 ? (
             <AudioPlaybackButton
               isPlaying={isPlayingAI}
               onPlay={playAIAudio}

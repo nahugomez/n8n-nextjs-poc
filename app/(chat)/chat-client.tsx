@@ -287,19 +287,13 @@ const ChatClient = () => {
             </div>
             <div className="p-4 border-t">
               <div className="max-w-2xl mx-auto">
-                <PromptBox onSubmit={handleSendMessage} onSendAudio={handleSendAudio} />
+                <PromptBox
+                  onSubmit={handleSendMessage}
+                  onSendAudio={handleSendAudio}
+                  onOpenAudioDialog={() => setAudioDialogOpen(true)}
+                />
               </div>
             </div>
-
-            {/* Audio Dialog for AI responses */}
-            <AudioDialog
-              open={audioDialogOpen}
-              onOpenChange={setAudioDialogOpen}
-              onSendAudio={handleSendAudio}
-              aiAudioBase64={aiAudioResponse?.base64}
-              aiTranscription={aiAudioResponse?.transcription}
-              userTranscription={aiAudioResponse?.userTranscription}
-            />
           </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center p-4">
@@ -307,13 +301,34 @@ const ChatClient = () => {
               <p className="text-3xl text-foreground mb-10">
                 ¿En qué puedo ayudarte?
               </p>
-              <PromptBox onSubmit={handleSendMessage} onSendAudio={handleSendAudio} />
+              <PromptBox
+                onSubmit={handleSendMessage}
+                onSendAudio={handleSendAudio}
+                onOpenAudioDialog={() => setAudioDialogOpen(true)}
+              />
             </div>
           </div>
         )}
 
         {/* Hidden audio element for playback */}
         <audio ref={audioRef} className="hidden" />
+
+        {/* Unified Audio Dialog (always mounted) */}
+        <AudioDialog
+          open={audioDialogOpen}
+          onOpenChange={(open) => {
+            setAudioDialogOpen(open);
+            if (!open) setAiAudioResponse(null);
+          }}
+          onSendAudio={handleSendAudio}
+          aiAudioBase64={aiAudioResponse?.base64}
+          aiTranscription={aiAudioResponse?.transcription}
+          userTranscription={aiAudioResponse?.userTranscription}
+          onPlaybackEnded={() => {
+            // Clear AI audio/transcriptions so dialog returns to mic state
+            setAiAudioResponse(null);
+          }}
+        />
       </div>
     </div>
   );
