@@ -14,7 +14,7 @@ import RecordPlugin from "wavesurfer.js/plugins/record";
 interface AudioDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSendAudio: (audioBase64: string) => void;
+  onSendAudio: (audioBase64: string) => void | Promise<void>;
   aiAudioBase64?: string;
   aiTranscription?: string;
   userTranscription?: string;
@@ -111,6 +111,14 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
   const { isRecording, startRecording, stopRecording, resetRecording } = useAudioRecorder();
   const [isProcessing, setIsProcessing] = React.useState(false);
   const hasAutoPlayedRef = React.useRef<string | null>(null);
+  const [errorMessage, setErrorMessage] = React.useState<string | null>(null);
+  const processingTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearProcessingTimer = React.useCallback(() => {
+    if (processingTimerRef.current) {
+      clearTimeout(processingTimerRef.current);
+      processingTimerRef.current = null;
+    }
+  }, []);
 
   // WaveSurfer: Recording (live mic) waveform
   const recordWaveContainerRef = React.useRef<HTMLDivElement | null>(null);
@@ -133,6 +141,7 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
 
   const handleStartRecording = async () => {
     try {
+      setErrorMessage(null);
       await startRecording();
     } catch (error) {
       alert(error instanceof Error ? error.message : 'No se pudo acceder al micrófono');
@@ -142,9 +151,24 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
   const handleStopRecording = async () => {
     const audioBase64 = await stopRecording();
     if (audioBase64) {
-      onSendAudio(audioBase64);
       // Show processing state while waiting for AI response
+      setErrorMessage(null);
       setIsProcessing(true);
+      // Start a safety timeout to avoid being stuck in processing forever
+      clearProcessingTimer();
+      processingTimerRef.current = setTimeout(() => {
+        setIsProcessing(false);
+        setErrorMessage("No pudimos procesar tu audio. Intenta nuevamente.");
+      }, 30000);
+
+      // Call user handler and catch sync/async errors
+      try {
+        await Promise.resolve(onSendAudio(audioBase64));
+      } catch (_err) {
+        clearProcessingTimer();
+        setIsProcessing(false);
+        setErrorMessage("Ocurrió un error procesando tu audio. Intenta nuevamente.");
+      }
     }
   };
 
@@ -169,6 +193,8 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
       setIsPlayingAI(false);
       setIsProcessing(false);
       hasAutoPlayedRef.current = null;
+      setErrorMessage(null);
+      clearProcessingTimer();
       // Cleanup WaveSurfer instances
       try { recordPluginRef.current?.stopMic?.(); } catch {}
       recordWSRef.current?.destroy?.();
@@ -232,6 +258,10 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
     if (!open) return;
     if (!aiAudioBase64) return;
     if (!aiWaveContainerRef.current) return;
+    // Clear any pending processing timeout and error
+    clearProcessingTimer();
+    setErrorMessage(null);
+    setIsProcessing(false);
 
     // Create instance if needed
     if (!aiWSRef.current) {
@@ -258,7 +288,6 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
     const ws: any = aiWSRef.current;
     const onReady = () => {
       if (hasAutoPlayedRef.current !== aiAudioBase64) {
-        setIsProcessing(false);
         hasAutoPlayedRef.current = aiAudioBase64;
         ws.play();
       }
@@ -281,6 +310,16 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
       aiWSRef.current = null;
     }
   }, [aiAudioBase64, open]);
+
+  const handleRetry = React.useCallback(() => {
+    clearProcessingTimer();
+    setErrorMessage(null);
+    setIsProcessing(false);
+    setIsPlayingAI(false);
+    hasAutoPlayedRef.current = null;
+    aiWSRef.current?.destroy?.();
+    aiWSRef.current = null;
+  }, [clearProcessingTimer]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -305,7 +344,12 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
             </div>
           )}
 
-          {isProcessing ? (
+          {errorMessage ? (
+            <div className="flex flex-col items-center justify-center py-6">
+              <p className="text-sm text-red-600">{errorMessage}</p>
+              <Button className="mt-3" variant="outline" onClick={handleRetry}>Intentar de nuevo</Button>
+            </div>
+          ) : isProcessing ? (
             <div className="flex flex-col items-center justify-center py-6">
               <MessageLoading />
               <p className="mt-3 text-sm text-muted-foreground">Procesando respuesta...</p>

@@ -55,10 +55,11 @@ const ChatClient = () => {
   };
 
   const handleSendAudio = (audioBase64: string) => {
-    sendMessage(audioBase64, 'audio');
+    // Return the promise so AudioDialog can await/catch errors
+    return sendMessage(audioBase64, 'audio');
   };
 
-  const sendMessage = (content: string, type: 'message' | 'audio') => {
+  const sendMessage = (content: string, type: 'message' | 'audio'): Promise<void> => {
     let targetSession = currentSession;
     let shouldUpdateSessionsList = false;
 
@@ -109,8 +110,8 @@ const ChatClient = () => {
     setCurrentSession(sessionWithLoading);
     updateSessions(sessionWithLoading, shouldUpdateSessionsList);
 
-    // Call n8n webhook to get AI response
-    sendToN8NWebhook(targetSession.id, content, type)
+    // Call n8n webhook to get AI response and propagate errors to callers
+    return sendToN8NWebhook(targetSession.id, content, type)
       .then((n8nResponse: N8NResponse) => {
         const sessionWithoutLoading = {
           ...sessionWithLoading,
@@ -197,6 +198,8 @@ const ChatClient = () => {
 
         setCurrentSession(finalSession);
         updateSessions(finalSession, shouldUpdateSessionsList);
+        // Rethrow so upstream (AudioDialog) can handle UI state
+        throw error;
       });
   };
 
