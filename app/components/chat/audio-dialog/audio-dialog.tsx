@@ -8,6 +8,8 @@ import { MicIcon } from "@/components/icons/mic-icon";
 import { StopIcon } from "@/components/icons/stop-icon";
 import { PlayIcon } from "@/components/icons/play-icon";
 import { MessageLoading } from "@/components/chat/chat-bubble/message-loading";
+import WaveSurfer from "wavesurfer.js";
+import RecordPlugin from "wavesurfer.js/plugins/record";
 
 interface AudioDialogProps {
   open: boolean;
@@ -106,10 +108,28 @@ const TranscriptionDisplay = ({ aiTranscription }: TranscriptionDisplayProps) =>
 
 export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, aiTranscription, userTranscription, onPlaybackEnded }: AudioDialogProps) {
   const [isPlayingAI, setIsPlayingAI] = React.useState(false);
-  const aiAudioRef = React.useRef<HTMLAudioElement | null>(null);
   const { isRecording, startRecording, stopRecording, resetRecording } = useAudioRecorder();
   const [isProcessing, setIsProcessing] = React.useState(false);
   const hasAutoPlayedRef = React.useRef<string | null>(null);
+
+  // WaveSurfer: Recording (live mic) waveform
+  const recordWaveContainerRef = React.useRef<HTMLDivElement | null>(null);
+  const recordWSRef = React.useRef<any>(null);
+  const recordPluginRef = React.useRef<any>(null);
+
+  // WaveSurfer: AI playback waveform
+  const aiWaveContainerRef = React.useRef<HTMLDivElement | null>(null);
+  const aiWSRef = React.useRef<any>(null);
+
+  const base64ToBlob = React.useCallback((base64: string, mimeType: string) => {
+    const byteString = atob(base64);
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+    return new Blob([ia], { type: mimeType });
+  }, []);
 
   const handleStartRecording = async () => {
     try {
@@ -129,11 +149,8 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
   };
 
   const playAIAudio = () => {
-    if (aiAudioBase64 && aiAudioRef.current) {
-      const audioUrl = `data:audio/webm;base64,${aiAudioBase64}`;
-      aiAudioRef.current.src = audioUrl;
-      aiAudioRef.current.play().catch(console.error);
-      setIsPlayingAI(true);
+    if (aiWSRef.current) {
+      aiWSRef.current.play();
     }
   };
 
@@ -152,17 +169,117 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
       setIsPlayingAI(false);
       setIsProcessing(false);
       hasAutoPlayedRef.current = null;
+      // Cleanup WaveSurfer instances
+      try { recordPluginRef.current?.stopMic?.(); } catch {}
+      recordWSRef.current?.destroy?.();
+      recordPluginRef.current = null;
+      recordWSRef.current = null;
+      aiWSRef.current?.destroy?.();
+      aiWSRef.current = null;
     }
   }, [open, resetRecording]);
 
-  // Auto-play AI audio when it arrives
+  // Init/destroy live recording waveform with RecordPlugin
+  React.useEffect(() => {
+    if (!isRecording) {
+      try { recordPluginRef.current?.stopMic?.(); } catch {}
+      recordWSRef.current?.destroy?.();
+      recordPluginRef.current = null;
+      recordWSRef.current = null;
+      return;
+    }
+
+    if (recordWaveContainerRef.current && !recordWSRef.current) {
+      const ws = WaveSurfer.create({
+        container: recordWaveContainerRef.current,
+        waveColor: "#60a5fa", // blue-400
+        progressColor: "#3b82f6", // blue-500
+        height: 80,
+        cursorWidth: 0,
+        interact: false,
+        barWidth: 2,
+        barGap: 1,
+        barRadius: 2,
+      });
+
+      const record = ws.registerPlugin(
+        RecordPlugin.create({
+          scrollingWaveform: true,
+          renderRecordedAudio: false,
+        })
+      );
+
+      // Start mic and surface any device errors
+      record.startMic().catch((err: unknown) => {
+        console.error("RecordPlugin startMic error:", err);
+      });
+
+      recordWSRef.current = ws;
+      recordPluginRef.current = record;
+    }
+
+    return () => {
+      // Ensures cleanup if component unmounts while recording
+      try { recordPluginRef.current?.stopMic?.(); } catch {}
+      recordWSRef.current?.destroy?.();
+      recordPluginRef.current = null;
+      recordWSRef.current = null;
+    };
+  }, [isRecording]);
+
+  // Setup AI waveform and auto-play when new audio arrives
   React.useEffect(() => {
     if (!open) return;
     if (!aiAudioBase64) return;
-    if (hasAutoPlayedRef.current === aiAudioBase64) return;
-    setIsProcessing(false);
-    hasAutoPlayedRef.current = aiAudioBase64;
-    playAIAudio();
+    if (!aiWaveContainerRef.current) return;
+
+    // Create instance if needed
+    if (!aiWSRef.current) {
+      const ws = WaveSurfer.create({
+        container: aiWaveContainerRef.current,
+        waveColor: "#a1a1aa", // zinc-400
+        progressColor: "#22c55e", // green-500
+        height: 80,
+        cursorWidth: 1,
+        normalize: true,
+        barWidth: 2,
+        barGap: 1,
+        barRadius: 2,
+      });
+      ws.on("play", () => setIsPlayingAI(true));
+      ws.on("pause", () => setIsPlayingAI(false));
+      ws.on("finish", handleAIAudioEnded);
+      aiWSRef.current = ws;
+    } else {
+      // Stop any current playback before loading new audio
+      aiWSRef.current.stop();
+    }
+
+    const ws: any = aiWSRef.current;
+    const onReady = () => {
+      if (hasAutoPlayedRef.current !== aiAudioBase64) {
+        setIsProcessing(false);
+        hasAutoPlayedRef.current = aiAudioBase64;
+        ws.play();
+      }
+    };
+    ws.once("ready", onReady);
+
+    const blob = base64ToBlob(aiAudioBase64, "audio/webm");
+    ws.loadBlob(blob);
+
+    return () => {
+      ws.un("ready", onReady);
+    };
+  }, [aiAudioBase64, open, base64ToBlob]);
+
+  // Destroy AI waveform if audio is cleared while dialog stays open
+  React.useEffect(() => {
+    if (!open) return;
+    if (!aiAudioBase64 && aiWSRef.current) {
+      aiWSRef.current.destroy?.();
+      aiWSRef.current = null;
+    }
   }, [aiAudioBase64, open]);
 
   return (
@@ -174,6 +291,19 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
             isRecording={isRecording}
             isProcessing={isProcessing}
           />
+
+          {/* Waveforms */}
+          {isRecording && !aiAudioBase64 && (
+            <div className="w-full">
+              <div ref={recordWaveContainerRef} className="w-full h-20 rounded-md bg-muted overflow-hidden" />
+            </div>
+          )}
+
+          {aiAudioBase64 && (
+            <div className="w-full">
+              <div ref={aiWaveContainerRef} className="w-full h-20 rounded-md bg-muted overflow-hidden" />
+            </div>
+          )}
 
           {isProcessing ? (
             <div className="flex flex-col items-center justify-center py-6">
@@ -195,13 +325,6 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
 
           <TranscriptionDisplay
             aiTranscription={aiTranscription}
-          />
-
-          {/* Hidden audio element for AI audio playback */}
-          <audio
-            ref={aiAudioRef}
-            className="hidden"
-            onEnded={handleAIAudioEnded}
           />
         </div>
       </DialogContent>
