@@ -139,6 +139,20 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
     return new Blob([ia], { type: mimeType });
   }, []);
 
+  const guessAudioMime = React.useCallback((base64: string): string => {
+    if (!base64) return "audio/mpeg";
+    // ID3 header -> MP3
+    if (base64.startsWith("SUQz")) return "audio/mpeg";
+    // EBML header (\x1A E5 DF A3) typical of WebM
+    if (base64.startsWith("GkXf")) return "audio/webm";
+    // RIFF header -> WAV
+    if (base64.startsWith("UklG")) return "audio/wav";
+    // OggS header -> OGG
+    if (base64.startsWith("T2dnUw")) return "audio/ogg";
+    // Fallback
+    return "audio/mpeg";
+  }, []);
+
   const handleStartRecording = async () => {
     try {
       setErrorMessage(null);
@@ -294,13 +308,14 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
     };
     ws.once("ready", onReady);
 
-    const blob = base64ToBlob(aiAudioBase64, "audio/webm");
+    const mimeType = guessAudioMime(aiAudioBase64);
+    const blob = base64ToBlob(aiAudioBase64, mimeType);
     ws.loadBlob(blob);
 
     return () => {
       ws.un("ready", onReady);
     };
-  }, [aiAudioBase64, open, base64ToBlob]);
+  }, [aiAudioBase64, open, base64ToBlob, guessAudioMime]);
 
   // Destroy AI waveform if audio is cleared while dialog stays open
   React.useEffect(() => {

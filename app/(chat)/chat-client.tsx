@@ -119,7 +119,12 @@ const ChatClient = () => {
           messages: sessionWithLoading.messages.filter(msg => !msg.isLoading)
         };
 
-        if (n8nResponse.response.type === 'audio') {
+        const responseType = String(n8nResponse.response.type ?? '')
+          .trim()
+          .replace(/^['"]+|['"]+$/g, '')
+          .toLowerCase();
+
+        if (responseType === 'audio') {
           // For audio responses, show the audio dialog instead of adding to chat
           setAiAudioResponse({
             base64: n8nResponse.response.data,

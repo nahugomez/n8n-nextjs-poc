@@ -3,7 +3,6 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import remarkBreaks from "remark-breaks";
 
 interface MarkdownMessageProps {
   content: string;
@@ -16,9 +15,10 @@ export function MarkdownMessage({ content }: MarkdownMessageProps) {
     return content.replace(/\r\n/g, "\n").replace(/\\n/g, "\n");
   }, [content]);
   return (
-    <div className={`text-sm leading-relaxed max-w-none whitespace-pre-wrap break-words`}>
+    <div className={`text-sm leading-relaxed max-w-none break-words`}>
       <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkBreaks]}
+        // Keep GFM for lists, tables, etc. Do not force single newlines into <br/>
+        remarkPlugins={[remarkGfm]}
         // Do NOT enable rehypeRaw to avoid rendering raw HTML for safety
         components={{
           h1: ({ node, ...props }) => (
