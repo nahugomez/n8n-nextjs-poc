@@ -15,6 +15,7 @@ import {
 } from "@/lib/client-storage";
 import { sendToN8NWebhook } from "@/features/chat/server/actions";
 import { AudioDialog } from "@/components/chat/audio-dialog/audio-dialog";
+import { MarkdownMessage } from "@/components/chat/markdown-message";
 
 const ChatClient = () => {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
@@ -272,7 +273,7 @@ const ChatClient = () => {
                     >
                       {message.isLoading ? null : (
                         <>
-                          {message.content}
+                          <MarkdownMessage content={message.content} />
                           {((message.type === 'audio' && message.audioBase64) || message.isAudioTranscription) && (
                             <div className="text-xs text-muted-foreground mt-1">
                               <em>Transcripción de audio</em>
