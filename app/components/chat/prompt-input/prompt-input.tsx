@@ -178,6 +178,7 @@ const ImagePreviewDialog = ({
         </button>
       </div>
       <DialogContent>
+        <DialogPrimitive.Title className="sr-only">Vista previa de imagen</DialogPrimitive.Title>
         <img src={imagePreview} alt="Full size preview" className="w-full max-h-[95vh] object-contain rounded-[24px]" />
       </DialogContent>
     </Dialog>

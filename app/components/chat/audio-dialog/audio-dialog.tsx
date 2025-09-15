@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useAudioRecorder } from "@/hooks/use-audio-recorder";
 import { MicIcon } from "@/components/icons/mic-icon";
 import { StopIcon } from "@/components/icons/stop-icon";
@@ -340,6 +340,15 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <div className="flex flex-col items-center space-y-4">
+          <DialogTitle className="sr-only">
+            {aiAudioBase64
+              ? "Respuesta de audio"
+              : isProcessing
+                ? "Procesando..."
+                : isRecording
+                  ? "Grabando audio"
+                  : "Grabar audio"}
+          </DialogTitle>
           <DialogHeader
             hasAIAudio={!!aiAudioBase64}
             isRecording={isRecording}
