@@ -134,7 +134,14 @@ const ChatClient = () => {
           setAudioDialogOpen(true);
 
           // Add transcriptions to chat instead of audio files
-          const userMessageIndex = sessionWithoutLoading.messages.findIndex(msg => msg.isUser && msg.type === 'audio');
+          let userMessageIndex = -1;
+          for (let i = sessionWithoutLoading.messages.length - 1; i >= 0; i--) {
+            const msg = sessionWithoutLoading.messages[i];
+            if (msg.isUser && msg.type === 'audio') {
+              userMessageIndex = i;
+              break;
+            }
+          }
           if (userMessageIndex !== -1 && n8nResponse.response.userTranscription) {
             // Update user message with transcription
             sessionWithoutLoading.messages[userMessageIndex] = {
