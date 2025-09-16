@@ -97,9 +97,8 @@ interface TranscriptionDisplayProps {
 
 const TranscriptionDisplay = ({ aiTranscription }: TranscriptionDisplayProps) => (
   <>
-
     {aiTranscription && (
-      <div className="text-center text-sm text-muted-foreground max-w-xs">
+      <div className="w-full max-h-48 overflow-y-auto text-sm text-muted-foreground text-left whitespace-pre-wrap break-words px-2">
         <p><strong>Respuesta:</strong> {aiTranscription}</p>
       </div>
     )}
