@@ -21,33 +21,33 @@ export function MarkdownMessage({ content }: MarkdownMessageProps) {
         remarkPlugins={[remarkGfm]}
         // Do NOT enable rehypeRaw to avoid rendering raw HTML for safety
         components={{
-          h1: ({ node, ...props }) => (
+          h1: ({ ...props }) => (
             <h1 className="text-xl font-bold leading-tight mt-3 mb-2" {...props} />
           ),
-          h2: ({ node, ...props }) => (
+          h2: ({ ...props }) => (
             <h2 className="text-lg font-semibold leading-tight mt-3 mb-2" {...props} />
           ),
-          h3: ({ node, ...props }) => (
+          h3: ({ ...props }) => (
             <h3 className="text-base font-semibold leading-snug mt-3 mb-2" {...props} />
           ),
-          p: ({ node, ...props }) => (
+          p: ({ ...props }) => (
             <p className="leading-relaxed my-2" {...props} />
           ),
-          ul: ({ node, ...props }) => (
+          ul: ({ ...props }) => (
             <ul className="list-disc pl-6 my-2" {...props} />
           ),
-          ol: ({ node, ...props }) => (
+          ol: ({ ...props }) => (
             <ol className="list-decimal pl-6 my-2" {...props} />
           ),
-          li: ({ node, ...props }) => <li className="my-0.5" {...props} />,
-          a: ({ node, ...props }) => (
+          li: ({ ...props }) => <li className="my-0.5" {...props} />,
+          a: ({ ...props }) => (
             <a className="underline underline-offset-2 hover:opacity-90" target="_blank" rel="noopener noreferrer" {...props} />
           ),
-          blockquote: ({ node, ...props }) => (
+          blockquote: ({ ...props }) => (
             <blockquote className="border-l-2 pl-4 italic opacity-90" {...props} />
           ),
-          code: (props) => {
-            const { inline, className, children, ...rest } = props as any;
+          code: (props: React.HTMLAttributes<HTMLElement> & { inline?: boolean; children?: React.ReactNode }) => {
+            const { inline, children, ...rest } = props;
             if (inline) {
               return (
                 <code className="rounded bg-muted px-1 py-0.5 font-mono text-[0.85em]" {...rest}>
@@ -61,10 +61,10 @@ export function MarkdownMessage({ content }: MarkdownMessageProps) {
               </code>
             );
           },
-          pre: ({ node, ...props }) => (
+          pre: ({ ...props }) => (
             <pre className="my-3" {...props} />
           ),
-          hr: ({ node, ...props }) => (
+          hr: ({ ...props }) => (
             <hr className="my-4 border-border" {...props} />
           )
         }}

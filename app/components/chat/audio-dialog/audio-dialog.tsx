@@ -121,12 +121,12 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
 
   // WaveSurfer: Recording (live mic) waveform
   const recordWaveContainerRef = React.useRef<HTMLDivElement | null>(null);
-  const recordWSRef = React.useRef<any>(null);
-  const recordPluginRef = React.useRef<any>(null);
+  const recordWSRef = React.useRef<WaveSurfer | null>(null);
+  const recordPluginRef = React.useRef<InstanceType<typeof RecordPlugin> | null>(null);
 
   // WaveSurfer: AI playback waveform
   const aiWaveContainerRef = React.useRef<HTMLDivElement | null>(null);
-  const aiWSRef = React.useRef<any>(null);
+  const aiWSRef = React.useRef<WaveSurfer | null>(null);
 
   const base64ToBlob = React.useCallback((base64: string, mimeType: string) => {
     const byteString = atob(base64);
@@ -191,14 +191,14 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
     }
   };
 
-  const handleAIAudioEnded = () => {
+  const handleAIAudioEnded = React.useCallback(() => {
     setIsPlayingAI(false);
     setIsProcessing(false);
     // Notify parent so it can clear AI audio and return to mic state
     // (keeping dialog open for next recording)
     // The parent can reset aiAudioBase64/aiTranscription/userTranscription
     onPlaybackEnded?.();
-  };
+  }, [onPlaybackEnded]);
 
   React.useEffect(() => {
     if (!open) {
@@ -216,7 +216,7 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
       aiWSRef.current?.destroy?.();
       aiWSRef.current = null;
     }
-  }, [open, resetRecording]);
+  }, [open, resetRecording, clearProcessingTimer]);
 
   // Init/destroy live recording waveform with RecordPlugin
   React.useEffect(() => {
@@ -298,13 +298,14 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
       aiWSRef.current.stop();
     }
 
-    const ws: any = aiWSRef.current;
+    const ws = aiWSRef.current as WaveSurfer;
     const onReady = () => {
       if (hasAutoPlayedRef.current !== aiAudioBase64) {
         hasAutoPlayedRef.current = aiAudioBase64;
         ws.play();
       }
     };
+
     ws.once("ready", onReady);
 
     const mimeType = guessAudioMime(aiAudioBase64);
@@ -314,7 +315,7 @@ export function AudioDialog({ open, onOpenChange, onSendAudio, aiAudioBase64, ai
     return () => {
       ws.un("ready", onReady);
     };
-  }, [aiAudioBase64, open, base64ToBlob, guessAudioMime]);
+  }, [aiAudioBase64, open, base64ToBlob, guessAudioMime, clearProcessingTimer, handleAIAudioEnded]);
 
   // Destroy AI waveform if audio is cleared while dialog stays open
   React.useEffect(() => {
